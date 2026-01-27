@@ -56,6 +56,18 @@ class FirstLoadingViewmodel extends AppViewModel {
 
   Future<void> _checkAndHandleIntroductions() async {
     try {
+      // เช็คว่ามีข้อมูล login อยู่หรือไม่ (auto-login)
+      final userData = appPreferences.getUserData();
+      final customerData = appPreferences.getCustomerData();
+      
+      if (userData != null && customerData != null) {
+        // มีข้อมูล login อยู่แล้ว → ไปหน้า home โดยตรง
+        if (context.mounted) {
+          context.go('/home');
+        }
+        return;
+      }
+
       final introductionsResult =
           await introductionsDataSource.fetchAppIntroductions();
 

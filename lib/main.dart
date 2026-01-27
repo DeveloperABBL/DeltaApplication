@@ -1,11 +1,21 @@
 import 'package:delta_compressor_202501017/core/env/app_evnironment.dart';
 import 'package:delta_compressor_202501017/core/env/dev_environment.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+/// Status bar ใช้ไอคอนสีอ่อนให้มองเห็นบนพื้นดำ (โหมดมืด)
+const _lightStatusBar = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setSystemUIOverlayStyle(_lightStatusBar);
 
   // Initialize AppEnvironment
   final appEnvironment = DevEnvironment();
@@ -42,7 +52,17 @@ class MyApp extends StatelessWidget {
                   colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                   useMaterial3: true,
                   fontFamily: 'DB_Helvethaica_X',
+                  appBarTheme: const AppBarTheme(
+                    systemOverlayStyle: _lightStatusBar,
+                  ),
                 ),
+                builder: (context, child) {
+                  // บังคับ status bar สีอ่อนทุกหน้าจอ (ป้องกัน theme/Scaffold ทับ)
+                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: _lightStatusBar,
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                },
                 routerConfig: envNotifier.appRouter.router,
               );
             },

@@ -29,7 +29,7 @@ class UiResult<T> {
   bool get isSuccess => _state == UiState.success;
   bool get isEmpty => _state == UiState.empty;
   bool get isError => _state == UiState.error;
-  bool get hashData => _data != null;
+  bool get hasData => _data != null;
   bool get hasError => _error != null;
   Exception? get error => _error;
   T? get data => _data;

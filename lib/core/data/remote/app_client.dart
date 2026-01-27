@@ -43,4 +43,14 @@ abstract class AppClient {
   /// API login
   @POST('/app-login')
   Future<HttpResponse<LoginResponse>> appLogin(@Body() LoginRequest request);
+
+  /// API fetch notifications (article + alert list)
+  @GET('/notifications')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchNotifications();
+
+  /// API fetch service jobs by customer branch
+  @GET('/service-jobs/{customer_branch_id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobs(
+    @Path('customer_branch_id') String customerBranchId,
+  );
 }

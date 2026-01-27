@@ -2,7 +2,6 @@ import 'package:delta_compressor_202501017/core/utils/app_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppText extends StatelessWidget {
   final String text;
@@ -37,44 +36,32 @@ class AppText extends StatelessWidget {
 
   late final List<String> split = text.split(regExp);
 
+  static const String _fontFamily = 'DB_Helvethaica_X';
+
   @override
   Widget build(BuildContext context) {
     TextStyle mStyle = style ?? context.textTheme.labelLarge!;
+    final baseStyle = mStyle.copyWith(
+      fontFamily: _fontFamily,
+      // ปรับความสูงบรรทัดให้พอดีกับเมตริกของ DB_Helvethaica_X (ลดอาการข้อความชิดบน)
+      height: mStyle.height ?? 1.25,
+    );
+    final fontSize = baseStyle.fontSize ?? 14.0;
+    final strut = strutStyle ??
+        StrutStyle(
+          fontFamily: _fontFamily,
+          fontSize: fontSize,
+          height: 1.25,
+          forceStrutHeight: true,
+        );
     return RichText(
       text: TextSpan(
         children: split
             .map(
-              (e) => number.hasMatch(e)
-                  ? TextSpan(
-                      text: e,
-                      style: GoogleFonts.prompt(
-                        textStyle: mStyle,
-                        color: mStyle.color,
-                        backgroundColor: mStyle.backgroundColor,
-                        fontSize: mStyle.fontSize,
-                        fontWeight: mStyle.fontWeight,
-                        fontStyle: mStyle.fontStyle,
-                        letterSpacing: mStyle.letterSpacing,
-                        wordSpacing: mStyle.wordSpacing,
-                        textBaseline: mStyle.textBaseline,
-                        height: mStyle.height,
-                        locale: mStyle.locale,
-                        foreground: mStyle.foreground,
-                        background: mStyle.background,
-                        shadows: mStyle.shadows,
-                        fontFeatures: mStyle.fontFeatures,
-                        decoration: mStyle.decoration,
-                        decorationColor: mStyle.decorationColor,
-                        decorationStyle: mStyle.decorationStyle,
-                        decorationThickness: mStyle.decorationThickness,
-                      ),
-                    )
-                  : TextSpan(
-                      text: e,
-                      style:
-                          style ??
-                          DefaultTextStyle.of(context).style.merge(style),
-                    ),
+              (e) => TextSpan(
+                text: e,
+                style: baseStyle,
+              ),
             )
             .toList(),
       ),
@@ -84,7 +71,7 @@ class AppText extends StatelessWidget {
       overflow: overflow ?? TextOverflow.clip,
       maxLines: maxLines,
       locale: locale,
-      strutStyle: strutStyle,
+      strutStyle: strut,
       textWidthBasis: textWidthBasis ?? TextWidthBasis.parent,
       textHeightBehavior: textHeightBehavior,
     );
@@ -224,7 +211,7 @@ class AppTextFormField extends StatelessWidget {
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
           textInputAction: textInputAction,
-          style: style?.merge(context.inputTextStyle) ?? context.inputTextStyle,
+          style: style != null ? context.inputTextStyle.merge(style) : context.inputTextStyle,
           strutStyle: strutStyle,
           textDirection: textDirection,
           textAlign: textAlign,
