@@ -71,4 +71,8 @@ abstract class AppClient {
   Future<HttpResponse<Map<String, dynamic>?>> fetchProductDetail(
     @Path('product_id') String productId,
   );
+
+  /// API fetch article highlight (carousel for home)
+  @GET('/article-highlight')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleHighlight();
 }

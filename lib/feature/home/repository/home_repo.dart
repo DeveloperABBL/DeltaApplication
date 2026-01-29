@@ -25,29 +25,23 @@ class HomeRepo extends AppRepository with HomeDataSource {
             : 'Plant: Unknown',
       );
 
-      // Mock articles until API is available
-      final articles = <ArticleItem>[
-        ArticleItem(
-          id: "1",
-          image:
-              "https://www.aircompdelta.com/images/guide-to-choosing-air-compressors-for-food-beverage-and-pharmaceutical-factories.webp",
-        ),
-        ArticleItem(
-          id: "2",
-          image:
-              "https://www.aircompdelta.com/images/delta-compressor-asia-not-just-selling-air-compressors.webp",
-        ),
-        ArticleItem(
-          id: "3",
-          image:
-              "https://www.aircompdelta.com/images/aircompresserblogbanner645.webp",
-        ),
-        ArticleItem(
-          id: "4",
-          image:
-              "https://www.aircompdelta.com/images/nitogen_product_banner_compressed.webp",
-        ),
-      ];
+      // Fetch article highlight from API
+      List<ArticleItem> articles = [];
+      try {
+        final response = await requireRemote.fetchArticleHighlight();
+        final body = response.data;
+        if (body != null &&
+            (body['status'] == true || body['success'] == true) &&
+            body['data'] is List<dynamic>) {
+          final list = body['data'] as List<dynamic>;
+          articles = list
+              .map((e) => ArticleItem.fromJson(
+                  Map<String, dynamic>.from(e as Map<dynamic, dynamic>)))
+              .toList();
+        }
+      } on DioException catch (_) {
+        // Fallback empty list on API error
+      }
 
       List<ProductItem> products = [];
       try {
