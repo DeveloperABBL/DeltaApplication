@@ -2,7 +2,6 @@ import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/viewmodels/app_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/home/models/home_model.dart';
 import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
-import 'package:flutter/material.dart';
 
 class HomeViewModel extends AppViewModel {
   HomeViewModel({
@@ -51,10 +50,5 @@ class HomeViewModel extends AppViewModel {
       _homeData = UiResult.error(error: e);
       notifyListeners();
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

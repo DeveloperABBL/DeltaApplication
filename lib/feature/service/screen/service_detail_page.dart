@@ -130,8 +130,14 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
               : Column(
                   children: [
                     _buildAppBar(context),
-                    _buildJobSummary(context),
-                    Expanded(child: _buildServiceTasks(context)),
+                    Expanded(
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverToBoxAdapter(child: _buildJobSummary(context)),
+                          _buildServiceTasks(context),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -160,7 +166,11 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Symbols.notifications, color: AppColors.light),
+            icon: const Icon(
+              Symbols.notifications,
+              color: AppColors.light,
+              fontWeight: FontWeight.bold,
+            ),
             onPressed: () => context.push(NotificationPage.pagePath),
           ),
         ],
@@ -276,62 +286,65 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   }
 
   Widget _buildServiceTasks(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppText(
-                'งานบริการ',
-                style: TextStyle(
-                  color: AppColors.light,
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(child: _buildServiceTasksHeader(context)),
+        if (_detail!.serviceTasks.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: Center(
+                child: AppText(
+                  'ไม่มีงานบริการ',
+                  style: TextStyle(color: AppColors.grey, fontSize: 18.sp),
                 ),
               ),
-              SizedBox(height: 4.h),
-              Container(
-                height: 2.h,
-                margin: EdgeInsets.only(right: 8.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.r),
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.success,
-                      AppColors.light,
-                      AppColors.danger,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) =>
+                    _buildTaskCard(_detail!.serviceTasks[index]),
+                childCount: _detail!.serviceTasks.length,
               ),
-            ],
+            ),
           ),
-        ),
-        Expanded(
-          child: _detail!.serviceTasks.isEmpty
-              ? Center(
-                  child: AppText(
-                    'ไม่มีงานบริการ',
-                    style: TextStyle(color: AppColors.grey, fontSize: 18.sp),
-                  ),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
-                  itemCount: _detail!.serviceTasks.length,
-                  itemBuilder: (context, index) {
-                    return _buildTaskCard(_detail!.serviceTasks[index]);
-                  },
-                ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildServiceTasksHeader(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            'งานบริการ',
+            style: TextStyle(
+              color: AppColors.light,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Container(
+            height: 2.h,
+            margin: EdgeInsets.only(right: 8.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.r),
+              gradient: LinearGradient(
+                colors: [AppColors.success, AppColors.light, AppColors.danger],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

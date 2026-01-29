@@ -11,6 +11,32 @@ class ArticleListData {
           .toList(),
     );
   }
+
+  /// Parse from API response: { success, data: [...] }
+  factory ArticleListData.fromApiResponse(Map<String, dynamic> json) {
+    final list = json['data'] as List<dynamic>? ?? [];
+    return ArticleListData(
+      items: list
+          .map((item) => ArticleListItem.fromJson(
+              Map<String, dynamic>.from(item as Map<dynamic, dynamic>)))
+          .toList(),
+    );
+  }
+}
+
+/// Model for article-highlight API: { status, data: [{ id, image }] }
+class ArticleHighlightItem {
+  final String id;
+  final String image;
+
+  ArticleHighlightItem({required this.id, required this.image});
+
+  factory ArticleHighlightItem.fromJson(Map<String, dynamic> json) {
+    return ArticleHighlightItem(
+      id: json['id']?.toString() ?? '',
+      image: json['image']?.toString() ?? '',
+    );
+  }
 }
 
 class ArticleListItem {
@@ -31,9 +57,10 @@ class ArticleListItem {
   factory ArticleListItem.fromJson(Map<String, dynamic> json) {
     return ArticleListItem(
       id: json['id']?.toString() ?? '',
-      title: json['title'] ?? '',
+      title: json['title']?.toString() ?? '',
       image: json['image']?.toString(),
-      publishDatetime: json['publish_datetime']?.toString(),
+      publishDatetime: json['publishDatetime']?.toString() ??
+          json['publish_datetime']?.toString(),
       detail: json['detail']?.toString(),
     );
   }

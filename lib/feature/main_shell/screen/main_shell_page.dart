@@ -109,7 +109,9 @@ class _MainShellWidgetState extends State<MainShellWidget> {
 
   @override
   void dispose() {
-    _viewModel.dispose();
+    // Let Provider dispose the ViewModel. Disposing here before super.dispose()
+    // can cause "PageController used after disposed" because PageView may
+    // still need the controller during teardown.
     super.dispose();
   }
 
@@ -138,7 +140,7 @@ class _MainShellWidgetState extends State<MainShellWidget> {
               maxLine: 1,
               shadowElevation: 5,
               kBottomRadius: 28.0,
-              bottomBarHeight: 76.h,
+              bottomBarHeight: 90.h,
               notchColor: AppColors.success,
               removeMargins: true,
               bottomBarWidth: 500,
@@ -156,6 +158,7 @@ class _MainShellWidgetState extends State<MainShellWidget> {
               onTap: _viewModel.onTabTap,
               kIconSize: 28.0,
               inactiveItemTopOffset: -6,
+              activeItemTopOffset: 6,
             )
           : null,
     );

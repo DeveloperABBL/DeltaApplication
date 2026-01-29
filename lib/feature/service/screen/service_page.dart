@@ -98,12 +98,14 @@ class _ServiceWidgetState extends State<ServiceWidget> {
                       icon: const Icon(
                         Symbols.notifications,
                         color: AppColors.light,
+                        fontWeight: FontWeight.bold,
                       ),
                       onPressed: () => context.push(NotificationPage.pagePath),
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 8.h),
               Expanded(
                 child: Selector<ServiceViewModel, UiResult<ServiceData>>(
                   selector: (context, provider) => provider.serviceData,

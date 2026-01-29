@@ -72,7 +72,29 @@ abstract class AppClient {
     @Path('product_id') String productId,
   );
 
-  /// API fetch article highlight (carousel for home)
+  /// API fetch article highlight (carousel for home/article)
   @GET('/article-highlight')
   Future<HttpResponse<Map<String, dynamic>?>> fetchArticleHighlight();
+
+  /// API fetch articles list
+  @GET('/articles')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchArticles();
+
+  /// API fetch article detail by id
+  @GET('/article/{id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleDetail(
+    @Path('id') String id,
+  );
+
+  /// API fetch related articles (keep reading) - excludes current article
+  @GET('/article-keepreading/{id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleKeepReading(
+    @Path('id') String id,
+  );
+
+  /// API fetch contact us by branch
+  @GET('/contact-us/{branch_id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchContactUs(
+    @Path('branch_id') String branchId,
+  );
 }

@@ -102,6 +102,9 @@ class AnimatedNotchBottomBar extends StatefulWidget {
   /// vertical offset for inactive items (negative = move up)
   final double inactiveItemTopOffset;
 
+  /// vertical offset for active item (positive = move down)
+  final double activeItemTopOffset;
+
   const AnimatedNotchBottomBar({
     Key? key,
     required this.notchBottomBarController,
@@ -135,6 +138,7 @@ class AnimatedNotchBottomBar extends StatefulWidget {
     this.topMargin = 10.0,
     this.circleMargin = 8.0,
     this.inactiveItemTopOffset = 0.0,
+    this.activeItemTopOffset = 0.0,
   }) : super(key: key);
 
   @override
@@ -240,14 +244,15 @@ class _AnimatedNotchBottomBarState extends State<AnimatedNotchBottomBar> with Si
                                 shadowElevation: widget.shadowElevation,
                                 kBottomRadius: widget.kBottomRadius,
                                 gradient: widget.notchGradient,
-                                elevation: widget.elevation),
+                                elevation: widget.elevation,
+                                activeItemTopOffset: widget.activeItemTopOffset),
                           ),
                         ),
                       ),
                       for (var i = 0; i < widget.bottomBarItems.length; i++) ...[
                         if (i == currentIndex && (_animationController.value == 1.0 || _isInitial))
                           Positioned(
-                            top: kMargin + kCircleMargin - widget.kIconSize / 2,
+                            top: kMargin + kCircleMargin - widget.kIconSize / 2 + widget.activeItemTopOffset,
                             left: _itemPosByScrollPosition(scrollPosition) + kCircleMargin + kCircleRadius - widget.kIconSize / 2,
                             child: BottomBarActiveItem(
                               i,

@@ -1,7 +1,8 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
-import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/article/models/article_model.dart';
+import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/article/repository/article_repo.dart';
 import 'package:delta_compressor_202501017/feature/article/viewmodel/article_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
@@ -96,17 +97,21 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                       icon: const Icon(
                         Symbols.notifications,
                         color: AppColors.light,
+                        fontWeight: FontWeight.bold,
                       ),
                       onPressed: () => context.push(NotificationPage.pagePath),
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 8.h),
               Expanded(
-                child: Selector<ArticleViewModel, UiResult<ArticleListData>>(
-                  selector: (context, provider) => provider.articleData,
-                  builder: (context, result, child) {
-                    if (result.isLoading) {
+                child: Consumer<ArticleViewModel>(
+                  builder: (context, viewModel, child) {
+                    final articleResult = viewModel.articleData;
+                    final highlightResult = viewModel.articleHighlightData;
+
+                    if (articleResult.isLoading || highlightResult.isLoading) {
                       return const Center(
                         child: CircularProgressIndicator(
                           color: AppColors.success,
@@ -114,69 +119,24 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                       );
                     }
 
-                    if (result.hasError) {
+                    if (articleResult.hasError) {
                       return _buildErrorWidget();
                     }
 
-                    if (result.isEmpty ||
-                        (result.hasData && result.requireData.items.isEmpty)) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Symbols.article,
-                              size: 64,
-                              color: AppColors.light,
-                            ),
-                            SizedBox(height: 16.h),
-                            AppText(
-                              'Article',
-                              style: TextStyle(
-                                color: AppColors.light,
-                                fontSize: 22.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            AppText(
-                              'No articles yet',
-                              style: TextStyle(
-                                color: AppColors.light,
-                                fontSize: 18.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                    final highlights = highlightResult.hasData
+                        ? highlightResult.requireData
+                        : <ArticleHighlightItem>[];
+                    final articles = articleResult.hasData
+                        ? articleResult.requireData.items
+                        : <ArticleListItem>[];
 
-                    final data = result.requireData;
                     return CustomScrollView(
                       slivers: [
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final item = data.items[index];
-                            return ListTile(
-                              title: AppText(
-                                item.title,
-                                style: const TextStyle(color: AppColors.light),
-                              ),
-                              subtitle: item.publishDatetime != null
-                                  ? AppText(
-                                      item.publishDatetime!,
-                                      style: TextStyle(
-                                        color: AppColors.grey,
-                                        fontSize: 12.sp,
-                                      ),
-                                    )
-                                  : null,
-                            );
-                          }, childCount: data.items.length),
-                        ),
+                        if (highlights.isNotEmpty)
+                          SliverToBoxAdapter(
+                            child: _buildSection2(context, highlights),
+                          ),
+                        _buildSection3(context, articles),
                       ],
                     );
                   },
@@ -184,6 +144,285 @@ class _ArticleWidgetState extends State<ArticleWidget> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection2(
+      BuildContext context, List<ArticleHighlightItem> highlights) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CarouselSlider.builder(
+          itemCount: highlights.length,
+          itemBuilder: (context, index, realIndex) {
+            final item = highlights[index];
+            return _buildHighlightCard(item);
+          },
+          options: CarouselOptions(
+            height: 180.h,
+            viewportFraction: 0.9,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 3),
+            autoPlayAnimationDuration: const Duration(milliseconds: 800),
+            autoPlayCurve: Curves.fastOutSlowIn,
+            enlargeCenterPage: true,
+            onPageChanged: (index, reason) {
+              _viewModel.setCurrentArticleIndex(index);
+            },
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              highlights.length,
+              (index) => Selector<ArticleViewModel, int>(
+                selector: (context, provider) => provider.currentArticleIndex,
+                builder: (context, currentIndex, child) {
+                  return Container(
+                    width: currentIndex == index ? 12.w : 8.w,
+                    height: 8.h,
+                    margin: EdgeInsets.symmetric(horizontal: 4.w),
+                    decoration: BoxDecoration(
+                      color: currentIndex == index
+                          ? AppColors.success
+                          : Colors.grey.shade400,
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18.w),
+          child: Container(
+            height: 2.h,
+            margin: EdgeInsets.only(right: 8.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.r),
+              gradient: LinearGradient(
+                colors: [AppColors.success, AppColors.light, AppColors.danger],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 24.h),
+      ],
+    );
+  }
+
+  Widget _buildHighlightCard(ArticleHighlightItem item) {
+    return GestureDetector(
+      onTap: () => context.push(ArticleDetailPage.pathFor(item.id)),
+      child: Container(
+      margin: EdgeInsets.symmetric(horizontal: 8.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        color: AppColors.softDark,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Image.network(
+          item.image,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 200.h,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppColors.success,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: AppColors.softDark,
+              child: const Center(
+                child: Icon(
+                  Symbols.broken_image,
+                  color: AppColors.light,
+                  size: 48,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildSection3(
+      BuildContext context, List<ArticleListItem> articles) {
+    if (articles.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Symbols.article,
+                size: 64.sp,
+                color: AppColors.light,
+              ),
+              SizedBox(height: 16.h),
+              AppText(
+                'Article',
+                style: TextStyle(
+                  color: AppColors.light,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              AppText(
+                'No articles yet',
+                style: TextStyle(
+                  color: AppColors.light,
+                  fontSize: 18.sp,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 24.h),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _buildArticleGridCard(articles[index]),
+          childCount: articles.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArticleGridCard(ArticleListItem article) {
+    return GestureDetector(
+      onTap: () => context.push(ArticleDetailPage.pathFor(article.id)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.softDark,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.all(4.w),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: article.image != null
+                        ? Image.network(
+                            article.image!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: AppColors.dark,
+                                child: const Center(
+                                  child: Icon(
+                                    Symbols.broken_image,
+                                    color: AppColors.light,
+                                    size: 40,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: AppColors.softDark,
+                            child: const Center(
+                              child: Icon(
+                                Symbols.broken_image,
+                                color: AppColors.light,
+                                size: 40,
+                              ),
+                            ),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: EdgeInsets.all(8.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: AppText(
+                        article.title,
+                        style: TextStyle(
+                          color: AppColors.light,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Icon(
+                          Symbols.nest_clock_farsight_analog,
+                          size: 14.sp,
+                          color: AppColors.light,
+                        ),
+                        SizedBox(width: 4.w),
+                        AppText(
+                          article.publishDatetime ?? '',
+                          style: TextStyle(
+                            color: AppColors.light,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

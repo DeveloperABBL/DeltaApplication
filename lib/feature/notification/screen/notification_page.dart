@@ -118,6 +118,7 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                                   Symbols.notifications,
                                   size: 64,
                                   color: AppColors.light,
+                                  fontWeight: FontWeight.bold,
                                 ),
                                 SizedBox(height: 16.h),
                                 AppText(

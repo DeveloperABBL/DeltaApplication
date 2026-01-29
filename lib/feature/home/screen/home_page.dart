@@ -6,6 +6,7 @@ import 'package:delta_compressor_202501017/feature/home/models/home_model.dart';
 import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:delta_compressor_202501017/feature/home/viewmodel/home_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
+import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
 import 'package:delta_compressor_202501017/feature/product/screen/product_detail_page.dart';
 import 'package:flutter/material.dart';
@@ -136,7 +137,7 @@ class _HomeWidgetState extends State<HomeWidget> {
   // Section 1: Header
   Widget _buildHeader(CustomerInfo customer) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +171,11 @@ class _HomeWidgetState extends State<HomeWidget> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: const Icon(Symbols.notifications, color: AppColors.light),
+            icon: const Icon(
+              Symbols.notifications,
+              color: AppColors.light,
+              fontWeight: FontWeight.bold,
+            ),
             onPressed: () => context.push(NotificationPage.pagePath),
           ),
         ],
@@ -243,7 +248,7 @@ class _HomeWidgetState extends State<HomeWidget> {
             return _buildArticleCard(article);
           },
           options: CarouselOptions(
-            height: 200.h,
+            height: 180.h,
             viewportFraction: 0.9,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 3),
@@ -287,43 +292,46 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   Widget _buildArticleCard(ArticleItem article) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 8.w),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.r),
-        color: AppColors.softDark,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: Image.network(
-          article.image,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: 200.h,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                color: AppColors.success,
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: AppColors.softDark,
-              child: const Center(
-                child: Icon(
-                  Symbols.broken_image,
-                  color: AppColors.light,
-                  size: 48,
+    return GestureDetector(
+      onTap: () => context.push(ArticleDetailPage.pathFor(article.id)),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 8.w),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          color: AppColors.softDark,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Image.network(
+            article.image,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 200.h,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.success,
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
                 ),
-              ),
-            );
-          },
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: AppColors.softDark,
+                child: const Center(
+                  child: Icon(
+                    Symbols.broken_image,
+                    color: AppColors.light,
+                    size: 48,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -562,8 +570,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                               fontWeight: FontWeight.w600,
                               color: product.temperature != null
                                   ? (product.temperature! > 100
-                                      ? AppColors.danger
-                                      : AppColors.primary)
+                                        ? AppColors.danger
+                                        : AppColors.primary)
                                   : AppColors.dark,
                             ),
                           ),

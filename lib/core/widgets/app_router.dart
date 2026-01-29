@@ -1,3 +1,4 @@
+import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/authentication/screen/forgot_password_page.dart';
 import 'package:delta_compressor_202501017/feature/authentication/screen/login_page.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/screen/first_loading_page.dart';
@@ -65,6 +66,15 @@ class AppRouter {
           final serviceId =
               state.pathParameters['serviceId'] ?? '';
           return ServiceDetailPage(serviceId: serviceId);
+        },
+      ),
+      GoRoute(
+        path: '${ArticleDetailPage.pagePath}/:articleId',
+        name: ArticleDetailPage.pageName,
+        builder: (context, state) {
+          final articleId =
+              state.pathParameters['articleId'] ?? '';
+          return ArticleDetailPage(articleId: articleId);
         },
       ),
     ],

@@ -13,6 +13,7 @@ class BottomBarPainter extends CustomPainter {
     this.shadowElevation,
     this.shader,
     this.gradient,
+    this.activeItemTopOffset = 0.0,
   })  : _paint = Paint()
           ..color = color
           ..isAntiAlias = true,
@@ -20,13 +21,15 @@ class BottomBarPainter extends CustomPainter {
         _notchPaint = Paint()
           ..color = notchColor
           ..isAntiAlias = true
-          ..shader = gradient?.createShader(Rect.fromCircle(
-            center: Offset(
-              position + kCircleMargin + kCircleRadius,
-              kMargin + kCircleMargin,
-            ),
-            radius: kCircleRadius,
-          ));
+          ..shader = gradient != null
+              ? gradient.createShader(Rect.fromCircle(
+                  center: Offset(
+                    position + kCircleMargin + kCircleRadius,
+                    kMargin + kCircleMargin + activeItemTopOffset,
+                  ),
+                  radius: kCircleRadius,
+                ))
+              : null;
 
   /// position
   final double position;
@@ -65,6 +68,11 @@ class BottomBarPainter extends CustomPainter {
   /// To add any gradient to the notch
   final double elevation;
 
+  /// Vertical offset for active item (positive = move down)
+  final double activeItemTopOffset;
+
+  double get _circleCenterY => kMargin + kCircleMargin + activeItemTopOffset;
+
   @override
   void paint(Canvas canvas, Size size) {
     _drawBar(canvas, size);
@@ -72,8 +80,10 @@ class BottomBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(BottomBarPainter oldDelegate) {
-    return position != oldDelegate.position || color != oldDelegate.color;
+  bool shouldRepaint(covariant BottomBarPainter oldDelegate) {
+    return position != oldDelegate.position ||
+        color != oldDelegate.color ||
+        activeItemTopOffset != oldDelegate.activeItemTopOffset;
   }
 
   /// draw bottom bar
@@ -82,21 +92,24 @@ class BottomBarPainter extends CustomPainter {
     final double right = size.width - kMargin;
     final double top = kMargin;
     final double bottom = top + kHeight;
+    // Notch chord Y = circle center Y so margin (kCircleMargin) is consistent
+    final double notchY = _circleCenterY;
+    const double notchR = kCircleRadius + kCircleMargin;
 
     final path = Path()
       ..moveTo(left + kTopRadius, top)
       ..lineTo(position - kTopRadius, top)
-      ..relativeArcToPoint(
-        Offset(kTopRadius, kTopRadius),
+      ..arcToPoint(
+        Offset(position, notchY),
         radius: Radius.circular(kTopRadius),
       )
-      ..relativeArcToPoint(
-        const Offset((kCircleRadius + kCircleMargin) * 2, 0.0),
-        radius: const Radius.circular(kCircleRadius + kCircleMargin),
+      ..arcToPoint(
+        Offset(position + notchR * 2, notchY),
+        radius: const Radius.circular(notchR),
         clockwise: false,
       )
-      ..relativeArcToPoint(
-        Offset(kTopRadius, -kTopRadius),
+      ..arcToPoint(
+        Offset(position + notchR * 2 + kTopRadius, top),
         radius: Radius.circular(kTopRadius),
       )
       ..lineTo(right - kTopRadius, top)
@@ -132,7 +145,7 @@ class BottomBarPainter extends CustomPainter {
         Rect.fromCircle(
           center: Offset(
             position + kCircleMargin + kCircleRadius,
-            kMargin + kCircleMargin,
+            _circleCenterY,
           ),
           radius: kCircleRadius,
         ),

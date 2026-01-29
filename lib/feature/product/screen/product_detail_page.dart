@@ -242,7 +242,11 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             ),
           ),
           IconButton(
-            icon: const Icon(Symbols.notifications, color: AppColors.light),
+            icon: const Icon(
+              Symbols.notifications,
+              color: AppColors.light,
+              fontWeight: FontWeight.bold,
+            ),
             onPressed: () => context.push(NotificationPage.pagePath),
           ),
         ],
@@ -918,7 +922,12 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: AppColors.warning, size: 28.sp,fontWeight: FontWeight.w600,),
+                Icon(
+                  icon,
+                  color: AppColors.warning,
+                  size: 28.sp,
+                  fontWeight: FontWeight.w600,
+                ),
                 SizedBox(width: 4.w),
               ],
               Expanded(
@@ -988,6 +997,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             (Match m) => '${m[1]},',
           );
     }
+
     final item = items.first;
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.w),
@@ -1027,7 +1037,12 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: AppColors.warning, size: 32.sp,fontWeight: FontWeight.w600,),
+                Icon(
+                  icon,
+                  color: AppColors.warning,
+                  size: 32.sp,
+                  fontWeight: FontWeight.w600,
+                ),
                 SizedBox(width: 4.w),
               ],
               Expanded(
