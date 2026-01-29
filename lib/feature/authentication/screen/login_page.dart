@@ -198,7 +198,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                           'Forgot Password?',
                           style: TextStyle(
                             color: AppColors.light,
-                            fontSize: 16,
+                            fontSize: 20,
                           ),
                         ),
                       ),
