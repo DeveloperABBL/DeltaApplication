@@ -1,7 +1,9 @@
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
+import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
+import 'package:delta_compressor_202501017/feature/service/screen/service_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/service/models/service_model.dart';
 import 'package:delta_compressor_202501017/feature/service/repository/service_repo.dart';
 import 'package:delta_compressor_202501017/feature/service/viewmodel/service_viewmodel.dart';
@@ -73,7 +75,13 @@ class _ServiceWidgetState extends State<ServiceWidget> {
                         Symbols.arrow_back,
                         color: AppColors.light,
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          context.read<MainShellViewModel>().onTabTap(0);
+                        }
+                      },
                     ),
                     Expanded(
                       child: AppText(
@@ -225,116 +233,83 @@ class _ServiceWidgetState extends State<ServiceWidget> {
   }
 
   Widget _buildServiceCard(BuildContext context, ServiceItem item) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.softDark,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _serviceTypeIcon(item.serviceType),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: AppText(
-                  item.jobCode,
-                  style: TextStyle(
-                    color: AppColors.light,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _statusColor(item.status),
-                  disabledBackgroundColor: _statusColor(item.status),
-                  foregroundColor: AppColors.light,
-                  disabledForegroundColor: AppColors.light,
-                  minimumSize: Size(70.w, 28.h),
-                  padding: EdgeInsets.symmetric(horizontal: 12.w),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999.r),
-                  ),
-                ),
-                child: AppText(
-                  _statusDisplay(item.status),
-                  style: TextStyle(
-                    color: AppColors.light,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Divider(height: 20.h, color: AppColors.light, thickness: 1),
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Symbols.calendar_today,
-                        color: AppColors.light,
-                        size: 16.sp,
-                      ),
-                      SizedBox(width: 6.w),
-                      AppText(
-                        'วันที่',
-                        style: TextStyle(
-                          color: AppColors.light,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  AppText(
-                    _formatServiceDate(item.serviceDate),
+    return GestureDetector(
+      onTap: () => context.push(ServiceDetailPage.pathFor(item.id)),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.softDark,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _serviceTypeIcon(item.serviceType),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: AppText(
+                    item.jobCode,
                     style: TextStyle(
                       color: AppColors.light,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-              const Spacer(),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                ),
+                ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _statusColor(item.status),
+                    disabledBackgroundColor: _statusColor(item.status),
+                    foregroundColor: AppColors.light,
+                    disabledForegroundColor: AppColors.light,
+                    minimumSize: Size(70.w, 28.h),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999.r),
+                    ),
+                  ),
+                  child: AppText(
+                    _statusDisplay(item.status),
+                    style: TextStyle(
+                      color: AppColors.light,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 20.h, color: AppColors.light, thickness: 1),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Symbols.star_outline,
+                          Symbols.calendar_today,
                           color: AppColors.light,
                           size: 16.sp,
                         ),
                         SizedBox(width: 6.w),
                         AppText(
-                          'จำนวนเครื่อง',
+                          'วันที่',
                           style: TextStyle(
                             color: AppColors.light,
                             fontSize: 16.sp,
@@ -344,7 +319,7 @@ class _ServiceWidgetState extends State<ServiceWidget> {
                       ],
                     ),
                     AppText(
-                      'Machine : ${item.machineCount}',
+                      _formatServiceDate(item.serviceDate),
                       style: TextStyle(
                         color: AppColors.light,
                         fontSize: 16.sp,
@@ -353,10 +328,46 @@ class _ServiceWidgetState extends State<ServiceWidget> {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ],
+                const Spacer(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Symbols.star_outline,
+                            color: AppColors.light,
+                            size: 16.sp,
+                          ),
+                          SizedBox(width: 6.w),
+                          AppText(
+                            'จำนวนเครื่อง',
+                            style: TextStyle(
+                              color: AppColors.light,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      AppText(
+                        'Machine : ${item.machineCount}',
+                        style: TextStyle(
+                          color: AppColors.light,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

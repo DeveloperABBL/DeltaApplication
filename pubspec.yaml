@@ -57,6 +57,8 @@ dependencies:
   intl: ^0.20.2
   
   # UI
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.9.0
   flutter_screenutil: ^5.9.3
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.10+1

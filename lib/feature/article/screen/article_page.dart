@@ -4,6 +4,7 @@ import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/article/models/article_model.dart';
 import 'package:delta_compressor_202501017/feature/article/repository/article_repo.dart';
 import 'package:delta_compressor_202501017/feature/article/viewmodel/article_viewmodel.dart';
+import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -20,10 +21,8 @@ class ArticlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => ArticleViewModel(
-        context: context,
-        articleDataSource: ArticleRepo(),
-      ),
+      create: (context) =>
+          ArticleViewModel(context: context, articleDataSource: ArticleRepo()),
       child: const ArticleWidget(),
     );
   }
@@ -65,7 +64,7 @@ class _ArticleWidgetState extends State<ArticleWidget> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -74,7 +73,13 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                         Symbols.arrow_back,
                         color: AppColors.light,
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          context.read<MainShellViewModel>().onTabTap(0);
+                        }
+                      },
                     ),
                     Expanded(
                       child: AppText(
@@ -150,29 +155,27 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                     return CustomScrollView(
                       slivers: [
                         SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final item = data.items[index];
-                              return ListTile(
-                                title: AppText(
-                                  item.title,
-                                  style: const TextStyle(
-                                    color: AppColors.light,
-                                  ),
-                                ),
-                                subtitle: item.publishDatetime != null
-                                    ? AppText(
-                                        item.publishDatetime!,
-                                        style: TextStyle(
-                                          color: AppColors.grey,
-                                          fontSize: 12.sp,
-                                        ),
-                                      )
-                                    : null,
-                              );
-                            },
-                            childCount: data.items.length,
-                          ),
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final item = data.items[index];
+                            return ListTile(
+                              title: AppText(
+                                item.title,
+                                style: const TextStyle(color: AppColors.light),
+                              ),
+                              subtitle: item.publishDatetime != null
+                                  ? AppText(
+                                      item.publishDatetime!,
+                                      style: TextStyle(
+                                        color: AppColors.grey,
+                                        fontSize: 12.sp,
+                                      ),
+                                    )
+                                  : null,
+                            );
+                          }, childCount: data.items.length),
                         ),
                       ],
                     );
@@ -194,19 +197,12 @@ class _ArticleWidgetState extends State<ArticleWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Symbols.error_outline,
-              color: AppColors.danger,
-              size: 64.sp,
-            ),
+            Icon(Symbols.error_outline, color: AppColors.danger, size: 64.sp),
             SizedBox(height: 16.h),
             AppText(
               err?.toString().replaceFirst('Exception: ', '') ??
                   'เกิดข้อผิดพลาด',
-              style: TextStyle(
-                color: AppColors.light,
-                fontSize: 16.sp,
-              ),
+              style: TextStyle(color: AppColors.light, fontSize: 16.sp),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
@@ -215,15 +211,11 @@ class _ArticleWidgetState extends State<ArticleWidget> {
               icon: const Icon(Symbols.refresh, color: AppColors.light),
               label: AppText(
                 'ลองใหม่อีกครั้ง',
-                style: TextStyle(
-                  color: AppColors.light,
-                  fontSize: 18.sp,
-                ),
+                style: TextStyle(color: AppColors.light, fontSize: 18.sp),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding:
-                    EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               ),
             ),
           ],
