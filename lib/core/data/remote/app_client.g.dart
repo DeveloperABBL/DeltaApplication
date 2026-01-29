@@ -124,6 +124,50 @@ class _AppClient implements AppClient {
   }
 
   @override
+  Future<HttpResponse<Map<String, dynamic>?>> fetchProductsByBranch(
+      String customerBranchId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<HttpResponse<Map<String, dynamic>?>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/products/${customerBranchId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>?>(_options);
+    final httpResponse = HttpResponse(_result.data, _result);
+    return httpResponse;
+  }
+
+  @override
+  Future<HttpResponse<Map<String, dynamic>?>> fetchProductDetail(
+      String productId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<HttpResponse<Map<String, dynamic>?>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/product/${productId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>?>(_options);
+    final httpResponse = HttpResponse(_result.data, _result);
+    return httpResponse;
+  }
+
+  @override
   Future<HttpResponse<LoginResponse>> appLogin(LoginRequest request) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

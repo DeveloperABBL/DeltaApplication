@@ -7,6 +7,7 @@ import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dar
 import 'package:delta_compressor_202501017/feature/home/viewmodel/home_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
+import 'package:delta_compressor_202501017/feature/product/screen/product_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -135,30 +136,31 @@ class _HomeWidgetState extends State<HomeWidget> {
   // Section 1: Header
   Widget _buildHeader(CustomerInfo customer) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 10.h),
-                AppText(
-                  customer.customerName,
-                  style: TextStyle(
-                    color: AppColors.light,
-                    fontSize: 26.sp,
-                    fontWeight: FontWeight.w600,
+            child: Transform.translate(
+              offset: Offset(0, -4.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    customer.customerName,
+                    style: TextStyle(
+                      color: AppColors.light,
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                SizedBox(height: 16.h),
-                AppText(
-                  customer.plant,
-                  style: TextStyle(color: AppColors.light, fontSize: 22.sp),
-                ),
-              ],
+                  AppText(
+                    customer.plant,
+                    style: TextStyle(color: AppColors.light, fontSize: 22.sp),
+                  ),
+                ],
+              ),
             ),
           ),
           IconButton(
@@ -184,7 +186,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(horizontal: 18.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -218,7 +220,7 @@ class _HomeWidgetState extends State<HomeWidget> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          padding: EdgeInsets.symmetric(horizontal: 18.w),
           child: Container(
             height: 2.h,
             margin: EdgeInsets.only(right: 8.w),
@@ -279,7 +281,7 @@ class _HomeWidgetState extends State<HomeWidget> {
             ),
           ),
         ),
-        SizedBox(height: 24.h),
+        SizedBox(height: 12.h),
       ],
     );
   }
@@ -316,7 +318,7 @@ class _HomeWidgetState extends State<HomeWidget> {
               child: const Center(
                 child: Icon(
                   Symbols.broken_image,
-                  color: AppColors.grey,
+                  color: AppColors.light,
                   size: 48,
                 ),
               ),
@@ -334,7 +336,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       children: [
         // Header with "See More"
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          padding: EdgeInsets.symmetric(horizontal: 18.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -350,7 +352,7 @@ class _HomeWidgetState extends State<HomeWidget> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
           child: Container(
             height: 2.h,
             margin: EdgeInsets.only(right: 8.w),
@@ -375,7 +377,10 @@ class _HomeWidgetState extends State<HomeWidget> {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        return _buildProductCard(product);
+        return GestureDetector(
+          onTap: () => context.push(ProductDetailPage.pathFor(product.id)),
+          child: _buildProductCard(product),
+        );
       },
     );
   }
@@ -385,21 +390,26 @@ class _HomeWidgetState extends State<HomeWidget> {
     Color statusColor;
     Color statusTextColor;
     if (product.isOnline) {
-      statusColor = AppColors.success;
-      statusTextColor = AppColors.light;
+      statusColor = AppColors.softGreen;
+      statusTextColor = AppColors.success;
     } else if (product.isError) {
-      statusColor = AppColors.danger;
-      statusTextColor = AppColors.light;
+      statusColor = AppColors.softRed;
+      statusTextColor = AppColors.danger;
     } else {
-      statusColor = AppColors.grey;
-      statusTextColor = AppColors.light;
+      statusColor = AppColors.softDark;
+      statusTextColor = AppColors.dark;
     }
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.softDark,
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          stops: const [0.0, 0.3, 1],
+          colors: [statusColor, statusColor, AppColors.light],
+        ),
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -414,33 +424,43 @@ class _HomeWidgetState extends State<HomeWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Part 1: Product Image (left)
-            Expanded(
-              flex: 3,
-              child: Container(
-                height: 100.h,
-                decoration: BoxDecoration(
-                  color: AppColors.dark,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
+            Center(
+              child: SizedBox(
+                width: 70.w,
+                height: 70.h,
                 child: product.image != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8.r),
                         child: Image.network(
                           product.image!,
+                          width: 70.w,
+                          height: 70.h,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
                               Symbols.broken_image,
-                              color: AppColors.grey,
+                              color: AppColors.light,
                               size: 40,
                             );
                           },
                         ),
                       )
-                    : const Icon(
-                        Symbols.precision_manufacturing,
-                        color: AppColors.grey,
-                        size: 40,
+                    : Container(
+                        width: 60.w,
+                        height: 60.h,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: AppColors.light.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Symbols.precision_manufacturing,
+                          color: AppColors.light,
+                          size: 40,
+                        ),
                       ),
               ),
             ),
@@ -451,43 +471,42 @@ class _HomeWidgetState extends State<HomeWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   AppText(
                     'SERIAL NO :',
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w300,
-                      color: AppColors.grey,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.light,
                       height: 1.0,
                     ),
                   ),
                   AppText(
                     product.serialNo,
                     style: TextStyle(
-                      fontSize: 20.sp,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.w600,
                       color: AppColors.light,
                       height: 1.0,
                     ),
                   ),
-                  SizedBox(height: 4.h),
                   AppText(
                     'MODEL :',
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w300,
-                      color: AppColors.grey,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.light,
                       height: 1.0,
                     ),
                   ),
                   AppText(
                     product.model,
                     style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w300,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.light,
-                      height: 1.0,
+                      height: 1,
                     ),
                   ),
                 ],
@@ -499,36 +518,30 @@ class _HomeWidgetState extends State<HomeWidget> {
               flex: 4,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
                 children: [
-                  // Status badge
+                  // Status badge - top right of Column
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
+                    padding: EdgeInsets.zero,
                     child: AppText(
                       product.status,
                       style: TextStyle(
-                        fontSize: 13.sp,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.w600,
                         color: statusTextColor,
                       ),
                     ),
                   ),
-                  SizedBox(height: 12.h),
-                  // Temperature and Pressure readings
+                  // Temperature and Pressure readings - bottom right of Column
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (product.temperature != null)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (product.temperature != null) ...[
                             Icon(
                               product.temperature! > 100
                                   ? Symbols.local_fire_department
@@ -536,52 +549,52 @@ class _HomeWidgetState extends State<HomeWidget> {
                               size: 18,
                               color: product.temperature! > 100
                                   ? AppColors.danger
-                                  : const Color(0xFF87CEEB), // Light blue
+                                  : AppColors.primary,
                             ),
                             SizedBox(width: 4.w),
-                            AppText(
-                              '${product.temperature!.toStringAsFixed(0)}${product.temperature! > 100 ? '°C' : ' °C'}',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                color: product.temperature! > 100
-                                    ? AppColors.danger
-                                    : const Color(0xFF87CEEB),
-                              ),
-                            ),
                           ],
-                        ),
-                      if (product.pressure != null) ...[
-                        SizedBox(height: 6.h),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
+                          AppText(
+                            product.temperature != null
+                                ? '${product.temperature!.toStringAsFixed(0)}${product.temperature! > 100 ? '°C' : ' °C'}'
+                                : '_ _ °C',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: product.temperature != null
+                                  ? (product.temperature! > 100
+                                      ? AppColors.danger
+                                      : AppColors.primary)
+                                  : AppColors.dark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 6.h),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (product.pressure != null) ...[
                             Icon(
                               Symbols.settings,
                               size: 18,
-                              color: const Color(0xFF87CEEB), // Light blue
+                              color: AppColors.primary,
                             ),
                             SizedBox(width: 4.w),
-                            AppText(
-                              '${product.pressure!.toStringAsFixed(0)} BAR',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF87CEEB),
-                              ),
-                            ),
                           ],
-                        ),
-                      ],
-                      if (product.temperature == null &&
-                          product.pressure == null)
-                        AppText(
-                          '--.--',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppColors.grey,
+                          AppText(
+                            product.pressure != null
+                                ? '${product.pressure!.toStringAsFixed(0)} BAR'
+                                : '_ _ BAR',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: product.pressure != null
+                                  ? AppColors.primary
+                                  : AppColors.dark,
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
                     ],
                   ),
                 ],

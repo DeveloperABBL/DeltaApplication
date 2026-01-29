@@ -14,87 +14,71 @@ class HomeRepo extends AppRepository with HomeDataSource {
   @override
   Future<RepoResult<HomeData>> fetchHomeData() async {
     try {
-      // TODO: Replace with actual API call when endpoint is available
-      // For now, return mock data with customer info from login
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Get customer data from AppPreferences (saved during login)
       final appPreferences = AppPreferences();
       final customerData = appPreferences.getCustomerData();
-      
-      // Create CustomerInfo from saved customer data
+      final branchId = customerData?.branchId?.toString() ?? '0';
+
       final customerInfo = CustomerInfo(
         customerName: customerData?.customerName ?? 'Unknown Customer',
-        plant: customerData?.branchName != null 
+        plant: customerData?.branchName != null
             ? 'Plant: ${customerData!.branchName!}'
             : 'Plant: Unknown',
       );
-      
-      final mockData = HomeData(
+
+      // Mock articles until API is available
+      final articles = <ArticleItem>[
+        ArticleItem(
+          id: "1",
+          image:
+              "https://www.aircompdelta.com/images/guide-to-choosing-air-compressors-for-food-beverage-and-pharmaceutical-factories.webp",
+        ),
+        ArticleItem(
+          id: "2",
+          image:
+              "https://www.aircompdelta.com/images/delta-compressor-asia-not-just-selling-air-compressors.webp",
+        ),
+        ArticleItem(
+          id: "3",
+          image:
+              "https://www.aircompdelta.com/images/aircompresserblogbanner645.webp",
+        ),
+        ArticleItem(
+          id: "4",
+          image:
+              "https://www.aircompdelta.com/images/nitogen_product_banner_compressed.webp",
+        ),
+      ];
+
+      List<ProductItem> products = [];
+      try {
+        final response = await requireRemote.fetchProductsByBranch(branchId);
+        final body = response.data;
+        if (body != null &&
+            body['success'] == true &&
+            body['data'] is List<dynamic>) {
+          final list = body['data'] as List<dynamic>;
+          products = list
+              .map((e) => ProductItem.fromJson(
+                  Map<String, dynamic>.from(e as Map<dynamic, dynamic>)))
+              .toList();
+        }
+      } on DioException catch (e) {
+        final message = e.response?.data is Map
+            ? (e.response!.data as Map)['message']?.toString()
+            : null;
+        return RepoResult.error(
+          error: Exception(
+              message ?? e.message ?? 'ไม่สามารถดึงข้อมูลสินค้าได้'),
+        );
+      }
+
+      final homeData = HomeData(
         customer: customerInfo,
-        articles: [
-          ArticleItem(
-            id: "1",
-            image: "https://www.aircompdelta.com/images/guide-to-choosing-air-compressors-for-food-beverage-and-pharmaceutical-factories.webp",
-          ),
-          ArticleItem(
-            id: "2",
-            image: "https://www.aircompdelta.com/images/delta-compressor-asia-not-just-selling-air-compressors.webp",
-          ),
-          ArticleItem(
-            id: "3",
-            image: "https://www.aircompdelta.com/images/aircompresserblogbanner645.webp",
-          ),
-          ArticleItem(
-            id: "4",
-            image: "https://www.aircompdelta.com/images/nitogen_product_banner_compressed.webp",
-          ),
-        ],
-        products: [
-          ProductItem(
-            id: "1",
-            serialNo: "ADI20250001-5",
-            model: "KT7508PMI",
-            status: "Online",
-            temperature: 26.0,
-            pressure: 16.0,
-          ),
-          ProductItem(
-            id: "2",
-            serialNo: "ADI20250002-5",
-            model: "KT7508PMI",
-            status: "Online",
-            temperature: 105.0,
-            pressure: 16.0,
-          ),
-          ProductItem(
-            id: "3",
-            serialNo: "ADI20250003-5",
-            model: "KT7508PMI",
-            status: "Error",
-            temperature: null,
-            pressure: null,
-          ),
-          ProductItem(
-            id: "4",
-            serialNo: "ADI20250004-5",
-            model: "KT7508PMI",
-            status: "Online",
-            temperature: 26.0,
-            pressure: 16.0,
-          ),
-          ProductItem(
-            id: "5",
-            serialNo: "ADI20250005-5",
-            model: "KT7508PMI",
-            status: "Offline",
-            temperature: null,
-            pressure: null,
-          ),
-        ],
+        articles: articles,
+        products: products,
       );
-      
-      return RepoResult.success(data: mockData);
+
+      return RepoResult.success(data: homeData);
     } on DioException catch (e) {
       return RepoResult.error(error: e);
     } on Exception catch (e) {

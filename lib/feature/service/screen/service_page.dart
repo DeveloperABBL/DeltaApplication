@@ -64,7 +64,7 @@ class _ServiceWidgetState extends State<ServiceWidget> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [

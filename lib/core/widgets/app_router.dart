@@ -4,6 +4,7 @@ import 'package:delta_compressor_202501017/feature/first_loading/screen/first_lo
 import 'package:delta_compressor_202501017/feature/main_shell/screen/main_shell_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
 import 'package:delta_compressor_202501017/feature/onboarding/screen/onboarding_page.dart';
+import 'package:delta_compressor_202501017/feature/product/screen/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -46,6 +47,15 @@ class AppRouter {
         path: NotificationPage.pagePath,
         name: NotificationPage.pageName,
         builder: (context, state) => const NotificationPage(),
+      ),
+      GoRoute(
+        path: '${ProductDetailPage.pagePath}/:productId',
+        name: ProductDetailPage.pageName,
+        builder: (context, state) {
+          final productId =
+              state.pathParameters['productId'] ?? '';
+          return ProductDetailPage(productId: productId);
+        },
       ),
     ],
   );

@@ -85,14 +85,16 @@ class ProductItem {
   });
 
   factory ProductItem.fromJson(Map<String, dynamic> json) {
+    final temp = json['temperature'];
+    final press = json['pressure'];
     return ProductItem(
-      id: json['id'] ?? '',
-      serialNo: json['serial_no'] ?? '',
-      model: json['model'] ?? '',
-      status: json['status'] ?? 'Offline',
-      temperature: json['temperature']?.toDouble(),
-      pressure: json['pressure']?.toDouble(),
-      image: json['image'],
+      id: (json['id'] ?? '').toString(),
+      serialNo: (json['serial_no'] ?? json['serialNo'] ?? '').toString(),
+      model: (json['model'] ?? '').toString(),
+      status: (json['status'] ?? 'Offline').toString(),
+      temperature: temp == null ? null : (temp is num ? temp.toDouble() : null),
+      pressure: press == null ? null : (press is num ? press.toDouble() : null),
+      image: json['image']?.toString(),
     );
   }
 

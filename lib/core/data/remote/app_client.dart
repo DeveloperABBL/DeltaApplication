@@ -53,4 +53,16 @@ abstract class AppClient {
   Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobs(
     @Path('customer_branch_id') String customerBranchId,
   );
+
+  /// API fetch products by customer branch
+  @GET('/products/{customer_branch_id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchProductsByBranch(
+    @Path('customer_branch_id') String customerBranchId,
+  );
+
+  /// API fetch product detail by product id
+  @GET('/product/{product_id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchProductDetail(
+    @Path('product_id') String productId,
+  );
 }
