@@ -11,8 +11,17 @@ abstract class AppViewModel extends ChangeNotifier {
   @protected
   late final AppPreferences appPreferences;
 
+  bool _disposed = false;
+  bool get isDisposed => _disposed;
+
   AppViewModel({required this.context}) {
     appPreferences = context.read<AppEvnironment>().appPreferences;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   CustomerProvider get currentCustomerProvider =>

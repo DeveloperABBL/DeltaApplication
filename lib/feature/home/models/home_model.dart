@@ -56,11 +56,11 @@ class ArticleItem {
 
   factory ArticleItem.fromJson(Map<String, dynamic> json) {
     return ArticleItem(
-      id: json['id'] ?? '',
-      image: json['image'] ?? '',
-      title: json['title'],
-      publishDatetime: json['publish_datetime'],
-      detail: json['detail'],
+      id: (json['id'] ?? '').toString(),
+      image: (json['carousel_image'] ?? json['gitcard_image'] ?? json['image'] ?? '').toString(),
+      title: json['title']?.toString(),
+      publishDatetime: json['publish_at']?.toString() ?? json['publish_datetime']?.toString(),
+      detail: json['detail']?.toString(),
     );
   }
 }
@@ -85,15 +85,28 @@ class ProductItem {
   });
 
   factory ProductItem.fromJson(Map<String, dynamic> json) {
-    final temp = json['temperature'];
-    final press = json['pressure'];
+    // อ่านจาก top-level หรือจาก object ย่อย current (latest log) ตาม API
+    final current = json['current'] is Map
+        ? Map<String, dynamic>.from(json['current'] as Map)
+        : null;
+    final temp = json['temperature'] ?? current?['temperature'];
+    final press =
+        json['air_pressure'] ?? json['pressure'] ?? current?['air_pressure'];
+    // API อาจส่งเป็น string ("82.00") หรือ num
+    double? _toDouble(dynamic v) {
+      if (v == null) return null;
+      if (v is num) return v.toDouble();
+      final parsed = double.tryParse(v.toString());
+      return parsed;
+    }
     return ProductItem(
-      id: (json['id'] ?? '').toString(),
+      id: (json['product_id'] ?? json['member_product_id'] ?? json['id'] ?? '')
+          .toString(),
       serialNo: (json['serial_no'] ?? json['serialNo'] ?? '').toString(),
-      model: (json['model'] ?? '').toString(),
+      model: (json['model_name'] ?? json['model'] ?? '').toString(),
       status: (json['status'] ?? 'Offline').toString(),
-      temperature: temp == null ? null : (temp is num ? temp.toDouble() : null),
-      pressure: press == null ? null : (press is num ? press.toDouble() : null),
+      temperature: _toDouble(temp),
+      pressure: _toDouble(press),
       image: json['image']?.toString(),
     );
   }

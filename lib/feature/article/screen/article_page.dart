@@ -343,16 +343,28 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                 padding: EdgeInsets.all(4.w),
                 child: Stack(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8.r),
-                      child: article.image != null
-                        ? Image.network(
-                            article.image!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: AppColors.dark,
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: article.image != null
+                            ? Image.network(
+                                article.image!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.dark,
+                                    child: const Center(
+                                      child: Icon(
+                                        Symbols.broken_image,
+                                        color: AppColors.light,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                color: AppColors.softDark,
                                 child: const Center(
                                   child: Icon(
                                     Symbols.broken_image,
@@ -360,19 +372,8 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                                     size: 40,
                                   ),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            color: AppColors.softDark,
-                            child: const Center(
-                              child: Icon(
-                                Symbols.broken_image,
-                                color: AppColors.light,
-                                size: 40,
                               ),
-                            ),
-                          ),
+                      ),
                     ),
                   ],
                 ),

@@ -37,7 +37,7 @@ class ArticleRepo extends AppRepository with ArticleDataSource {
   @override
   Future<RepoResult<ArticleListData>> fetchArticleList() async {
     try {
-      final response = await requireRemote.fetchArticles();
+      final response = await requireRemote.fetchArticleList();
       final body = response.data;
       if (body != null &&
           (body['success'] == true || body['status'] == true) &&

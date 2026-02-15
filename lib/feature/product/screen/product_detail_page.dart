@@ -999,12 +999,15 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     }
 
     final item = items.first;
+    final valueText = item.sparePartUsedTime != null
+        ? '${formatNumber(item.sparePartUsedTime!)} hrs'
+        : '—';
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.w),
       child: _buildMaintenanceCard(
         item.title,
-        item.id,
-        formatNumber(item.usedTime.toDouble()),
+        '',
+        valueText,
         icon: Symbols.deployed_code_history,
       ),
     );
@@ -1058,17 +1061,18 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Transform.translate(
-                      offset: Offset(0, -4.h),
-                      child: AppText(
-                        subtitle,
-                        style: TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w400,
+                    if (subtitle.isNotEmpty)
+                      Transform.translate(
+                        offset: Offset(0, -4.h),
+                        child: AppText(
+                          subtitle,
+                          style: TextStyle(
+                            color: AppColors.grey,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -1189,15 +1193,13 @@ class _AnimatedLinePainter extends CustomPainter {
 
     // Text drawn by overlay widgets
 
-    // Power line
+    // Power line (ตั้งฉาก: ท่อนแรกลงตรง แล้วค่อยแนวนอนไปซ้าย)
     final powerLabel = _textSpan('Power', 14, labelColor);
     final powerTp = _layout(powerLabel);
     final powerStartX = centerX - 20.0;
-    const powerDist = 49.0;
-    final powerAngle = 280.0 * (math.pi / 180);
-    final powerCornerX = powerStartX - powerDist * math.cos(powerAngle).abs();
-    final powerCornerY = imageBottom + powerDist * math.sin(powerAngle).abs();
     final powerEndY = size.height - 40.0;
+    final powerCornerY = powerEndY;
+    final powerCornerX = powerStartX - 5.0;
     final powerEndX = 20.0 + powerTp.width + 80;
     final powerPath = Path()
       ..moveTo(powerStartX, imageBottom)
@@ -1206,15 +1208,13 @@ class _AnimatedLinePainter extends CustomPainter {
     _drawLineByStatus(canvas, powerPath, paint, greenPaint);
     // Text drawn by overlay widgets
 
-    // Pressure line
+    // Pressure line (ตั้งฉาก: ท่อนแรกลงตรง แล้วค่อยแนวนอนไปขวา)
     final pressureLabel = _textSpan('Pressure', 14, labelColor);
     final pressureTp = _layout(pressureLabel);
     final pressureStartX = centerX + 20.0;
-    final pressureAngle = 260.0 * (math.pi / 180);
-    final pressureCornerX =
-        pressureStartX - powerDist * math.cos(pressureAngle);
-    final pressureCornerY = imageBottom - powerDist * math.sin(pressureAngle);
     final pressureEndY = size.height - 40.0;
+    final pressureCornerY = pressureEndY;
+    final pressureCornerX = pressureStartX + 5.0;
     final pressureEndX = size.width - 50.0 - pressureTp.width - 30;
     final pressurePath = Path()
       ..moveTo(pressureStartX, imageBottom)

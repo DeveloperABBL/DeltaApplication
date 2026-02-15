@@ -3,6 +3,7 @@ import 'package:delta_compressor_202501017/core/viewmodels/app_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/models/first_loading_model.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/repository/first_loading_repo.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/repository/introductions_repo.dart';
+import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:go_router/go_router.dart';
 
 class FirstLoadingViewmodel extends AppViewModel {
@@ -10,10 +11,12 @@ class FirstLoadingViewmodel extends AppViewModel {
     required super.context,
     required this.firstLoadingDataSource,
     required this.introductionsDataSource,
+    required this.homeDataSource,
   });
 
   final FirstLoadingDataSource firstLoadingDataSource;
   final IntroductionsDataSource introductionsDataSource;
+  final HomeDataSource homeDataSource;
 
   UiResult<FirstLoadingModel> _content = UiResult.loading();
   UiResult<FirstLoadingModel> get content => _content;
@@ -23,84 +26,83 @@ class FirstLoadingViewmodel extends AppViewModel {
     notifyListeners();
 
     try {
-      // 1. Fetch first loading image
+      // 1. Fetch first loading image (สำหรับแสดงระหว่างโหลด)
       final imageResult = await firstLoadingDataSource.fetchFirstLoading();
 
       if (imageResult.isSuccess) {
         _content = UiResult.success(
           data: FirstLoadingModel.fromResponse(imageResult.data),
         );
-        notifyListeners();
-
-        // 2. Fetch app introductions in parallel
-        await _checkAndHandleIntroductions();
-        return;
-      }
-
-      if (imageResult.isEmpty) {
+      } else if (imageResult.isEmpty) {
         _content = UiResult.empty(error: imageResult.hasError ? imageResult.error : null);
-        notifyListeners();
-        return;
-      }
-
-      if (imageResult.hasError) {
+      } else {
         _content = UiResult.error(error: imageResult.error);
-        notifyListeners();
-        return;
       }
+      notifyListeners();
+
+      // 2. เช็ค introductions และนำทางเสมอ (ไม่ผูกกับว่าโหลดรูปสำเร็จหรือไม่)
+      await _checkAndHandleIntroductions();
     } on Exception catch (e) {
       _content = UiResult.error(error: e);
       notifyListeners();
+      await _checkAndHandleIntroductions();
     }
   }
 
   Future<void> _checkAndHandleIntroductions() async {
     try {
-      // เช็คว่ามีข้อมูล login อยู่หรือไม่ (auto-login)
+      // 1. เช็ค introductions version ก่อน (อัปเดต first_introduction ตาม version)
+      final introductionsResult =
+          await introductionsDataSource.fetchAppIntroductions();
+
+      if (introductionsResult.isSuccess) {
+        final response = introductionsResult.data;
+        final list = response.data;
+        final apiVersion = response.introductionVersion ??
+            (list != null && list.isNotEmpty
+                ? list.map((e) => e.id).join('_')
+                : null);
+        final localVersion = appPreferences.getIntroductionVersion();
+
+        if (apiVersion != null && apiVersion != localVersion) {
+          appPreferences.setIntroductionVersion(apiVersion);
+          appPreferences.setFirstIntroduction(true);
+        }
+      }
+
+      if (!context.mounted) return;
+
+      // 2. ถ้ามี login อยู่แล้ว → ไป /home
       final userData = appPreferences.getUserData();
       final customerData = appPreferences.getCustomerData();
-      
+
       if (userData != null && customerData != null) {
-        // มีข้อมูล login อยู่แล้ว → ไปหน้า home โดยตรง
+        final homeResult = await homeDataSource.fetchHomeData();
+        HomeRepo.setPreloaded(homeResult);
         if (context.mounted) {
           context.go('/home');
         }
         return;
       }
 
-      final introductionsResult =
-          await introductionsDataSource.fetchAppIntroductions();
-
-      if (introductionsResult.isSuccess) {
-        final apiVersion =
-            introductionsResult.data.data?.introductionVersion;
-        final localVersion = appPreferences.getIntroductionVersion();
-
-        // เช็คว่า version ตรงกันหรือไม่
-        if (apiVersion != null && apiVersion != localVersion) {
-          // Version ไม่ตรงกัน → set first_introduction = true
-          appPreferences.setIntroductionVersion(apiVersion);
-          appPreferences.setFirstIntroduction(true);
-        }
-
-        // เช็คว่าต้องแสดง onboarding หรือไม่
-        final shouldShowOnboarding = appPreferences.isFirstIntroduction();
-
-        if (!context.mounted) return;
-
-        // Navigate based on first_introduction flag
-        if (shouldShowOnboarding) {
-          // ไปหน้า onboarding
-          context.go('/onboarding');
-        } else {
-          // ไปหน้า login
-          context.go('/login');
-        }
+      // 3. ยังไม่ login → ไป onboarding หรือ login ตาม first_introduction
+      final shouldShowOnboarding = appPreferences.isFirstIntroduction();
+      if (shouldShowOnboarding) {
+        context.go('/onboarding');
+      } else {
+        context.go('/login');
       }
     } on Exception {
-      // ถ้า fetch introductions fail ให้ไปหน้า login
       if (context.mounted) {
-        context.go('/login');
+        final userData = appPreferences.getUserData();
+        final customerData = appPreferences.getCustomerData();
+        if (userData != null && customerData != null) {
+          final homeResult = await homeDataSource.fetchHomeData();
+          HomeRepo.setPreloaded(homeResult);
+          context.go('/home');
+        } else {
+          context.go('/login');
+        }
       }
     }
   }

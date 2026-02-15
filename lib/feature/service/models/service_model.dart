@@ -104,14 +104,14 @@ class ServiceItem {
 
   factory ServiceItem.fromJson(Map<String, dynamic> json) {
     return ServiceItem(
-      id: json['id']?.toString() ?? '',
-      serviceType: json['serviceType']?.toString() ?? 'Other',
-      jobCode: json['jobCode']?.toString() ?? '',
-      serviceDate: json['serviceDate']?.toString() ?? '',
+      id: json['job_id']?.toString() ?? json['id']?.toString() ?? '',
+      serviceType: json['service_type']?.toString() ?? json['serviceType']?.toString() ?? 'Other',
+      jobCode: json['job_code']?.toString() ?? json['jobCode']?.toString() ?? '',
+      serviceDate: json['service_date']?.toString() ?? json['serviceDate']?.toString() ?? '',
       machineCount: (json['machineCount'] is int)
           ? json['machineCount'] as int
           : int.tryParse(json['machineCount']?.toString() ?? '0') ?? 0,
-      status: json['status']?.toString() ?? 'Pending',
+      status: json['job_status']?.toString() ?? json['status']?.toString() ?? 'Pending',
     );
   }
 }

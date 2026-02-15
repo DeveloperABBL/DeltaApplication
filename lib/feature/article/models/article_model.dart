@@ -24,7 +24,7 @@ class ArticleListData {
   }
 }
 
-/// Model for article-highlight API: { status, data: [{ id, image }] }
+/// Model for article-highlight API: { status, data: [{ id, gitcard_image }] }
 class ArticleHighlightItem {
   final String id;
   final String image;
@@ -34,7 +34,7 @@ class ArticleHighlightItem {
   factory ArticleHighlightItem.fromJson(Map<String, dynamic> json) {
     return ArticleHighlightItem(
       id: json['id']?.toString() ?? '',
-      image: json['image']?.toString() ?? '',
+      image: (json['gitcard_image'] ?? json['image'])?.toString() ?? '',
     );
   }
 }
@@ -58,8 +58,9 @@ class ArticleListItem {
     return ArticleListItem(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      image: json['image']?.toString(),
-      publishDatetime: json['publishDatetime']?.toString() ??
+      image: (json['carousel_image'] ?? json['image'])?.toString(),
+      publishDatetime: json['publish_at']?.toString() ??
+          json['publishDatetime']?.toString() ??
           json['publish_datetime']?.toString(),
       detail: json['detail']?.toString(),
     );

@@ -31,18 +31,18 @@ class OnboardingViewmodel extends AppViewModel {
       final result = await introductionsDataSource.fetchAppIntroductions();
 
       if (result.isSuccess) {
-        final responseData = result.data.data;
-        if (responseData == null || responseData.onboarding == null) {
+        final items = result.data.data;
+        if (items == null || items.isEmpty) {
           _onboardingItems = UiResult.empty();
           notifyListeners();
           return;
         }
 
         // Sort by order
-        final items = responseData.onboarding!;
-        items.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+        final sorted = List<OnboardingItem>.from(items)
+          ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
 
-        _onboardingItems = UiResult.success(data: items);
+        _onboardingItems = UiResult.success(data: sorted);
         notifyListeners();
         return;
       }

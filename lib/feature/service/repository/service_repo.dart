@@ -13,10 +13,10 @@ class ServiceRepo extends AppRepository with ServiceDataSource {
   @override
   Future<RepoResult<ServiceData>> fetchServiceData() async {
     try {
-      final customerData = AppPreferences().getCustomerData();
-      final branchId = customerData?.branchId?.toString() ?? '0';
+      final userData = AppPreferences().getUserData();
+      final memberId = userData?.id.toString() ?? '0';
 
-      final response = await requireRemote.fetchServiceJobs(branchId);
+      final response = await requireRemote.fetchServiceJobsByMember(memberId);
       final body = response.data;
       if (body == null) {
         return RepoResult.empty();

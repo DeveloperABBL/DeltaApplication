@@ -11,7 +11,7 @@ class ProductRepo extends AppRepository with ProductDataSource {
   @override
   Future<RepoResult<ProductDetail>> fetchProductDetail(String productId) async {
     try {
-      final response = await requireRemote.fetchProductDetail(productId);
+      final response = await requireRemote.fetchProductDetail(productId, null);
       final body = response.data;
       if (body == null) {
         return RepoResult.error(

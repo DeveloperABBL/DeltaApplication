@@ -3,6 +3,7 @@ import 'package:delta_compressor_202501017/feature/first_loading/models/first_lo
 import 'package:delta_compressor_202501017/feature/first_loading/repository/first_loading_repo.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/repository/introductions_repo.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/viewmodel/first_loading_viewmodel.dart';
+import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ class FirstLoadingPage extends StatelessWidget {
         context: context,
         firstLoadingDataSource: FirstLoadingRepo(),
         introductionsDataSource: IntroductionsRepo(),
+        homeDataSource: HomeRepo(),
       ),
       child: const FirstLoadingWidget(),
     );

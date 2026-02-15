@@ -50,7 +50,7 @@ Map<String, dynamic> _$LoginUserDataToJson(LoginUserData instance) =>
 
 LoginCustomerData _$LoginCustomerDataFromJson(Map<String, dynamic> json) =>
     LoginCustomerData(
-      customerId: json['customer_id'] as String,
+      customerId: _customerIdFromJson(json['customer_id']),
       customerName: json['customer_name'] as String,
       branchId: _nullableIntFromJson(json['branch_id']),
       branchName: json['branch_name'] as String?,

@@ -19,6 +19,14 @@ int? _nullableIntFromJson(dynamic json) {
   throw ArgumentError('Cannot convert $json to int?');
 }
 
+/// API ส่ง customer_id เป็น int หรือ string
+String _customerIdFromJson(dynamic json) {
+  if (json == null) return '';
+  if (json is String) return json;
+  if (json is int || json is num) return json.toString();
+  return json.toString();
+}
+
 @JsonSerializable()
 class LoginResponse {
   final bool success;
@@ -67,7 +75,7 @@ class LoginUserData {
 
 @JsonSerializable()
 class LoginCustomerData {
-  @JsonKey(name: 'customer_id')
+  @JsonKey(name: 'customer_id', fromJson: _customerIdFromJson)
   final String customerId;
   @JsonKey(name: 'customer_name')
   final String customerName;

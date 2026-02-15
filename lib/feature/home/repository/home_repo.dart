@@ -11,12 +11,27 @@ mixin HomeDataSource {
 
 /// Implementation
 class HomeRepo extends AppRepository with HomeDataSource {
+  /// Cache สำหรับ home data ที่โหลดจาก first loading (เมื่อ member login) เพื่อไม่ให้ home โหลดซ้ำ
+  static RepoResult<HomeData>? _preloaded;
+
+  static void setPreloaded(RepoResult<HomeData>? value) {
+    _preloaded = value;
+  }
+
+  /// ดึงและล้าง preloaded (ใช้ได้ครั้งเดียว)
+  static RepoResult<HomeData>? takePreloaded() {
+    final r = _preloaded;
+    _preloaded = null;
+    return r;
+  }
+
   @override
   Future<RepoResult<HomeData>> fetchHomeData() async {
     try {
       final appPreferences = AppPreferences();
       final customerData = appPreferences.getCustomerData();
-      final branchId = customerData?.branchId?.toString() ?? '0';
+      final userData = appPreferences.getUserData();
+      final memberId = userData?.id.toString() ?? '0';
 
       final customerInfo = CustomerInfo(
         customerName: customerData?.customerName ?? 'Unknown Customer',
@@ -45,7 +60,7 @@ class HomeRepo extends AppRepository with HomeDataSource {
 
       List<ProductItem> products = [];
       try {
-        final response = await requireRemote.fetchProductsByBranch(branchId);
+        final response = await requireRemote.fetchProductsByMember(memberId);
         final body = response.data;
         if (body != null &&
             body['success'] == true &&

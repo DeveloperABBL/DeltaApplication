@@ -23,11 +23,27 @@ class HomeViewModel extends AppViewModel {
   }
 
   Future<void> fetchHomeData() async {
+    // ใช้ข้อมูลที่ first loading โหลดไว้แล้ว (เมื่อ member login) เพื่อไม่ให้โหลดซ้ำ
+    final preloaded = HomeRepo.takePreloaded();
+    if (preloaded != null) {
+      if (preloaded.isSuccess) {
+        _homeData = UiResult.success(data: preloaded.data);
+      } else if (preloaded.isEmpty) {
+        _homeData = UiResult.empty(error: preloaded.hasError ? preloaded.error : null);
+      } else {
+        _homeData = UiResult.error(error: preloaded.error);
+      }
+      notifyListeners();
+      return;
+    }
+
     _homeData = UiResult.loading();
     notifyListeners();
 
     try {
       final result = await homeDataSource.fetchHomeData();
+
+      if (isDisposed) return;
 
       if (result.isSuccess) {
         _homeData = UiResult.success(data: result.data);
@@ -47,8 +63,10 @@ class HomeViewModel extends AppViewModel {
         return;
       }
     } on Exception catch (e) {
-      _homeData = UiResult.error(error: e);
-      notifyListeners();
+      if (!isDisposed) {
+        _homeData = UiResult.error(error: e);
+        notifyListeners();
+      }
     }
   }
 }

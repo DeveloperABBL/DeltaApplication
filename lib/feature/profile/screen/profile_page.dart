@@ -300,6 +300,12 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                 label: 'Facebook',
                 onTap: () => _launchUrl(contact.facebook),
               ),
+            if (contact.tiktok != null && contact.tiktok!.isNotEmpty)
+              _buildContactChip(
+                icon: Symbols.music_note,
+                label: 'TikTok',
+                onTap: () => _launchUrl(contact.tiktok),
+              ),
           ],
         ),
         SizedBox(height: 20.h),

@@ -48,10 +48,10 @@ abstract class AppClient {
   @GET('/notifications')
   Future<HttpResponse<Map<String, dynamic>?>> fetchNotifications();
 
-  /// API fetch service jobs by customer branch
-  @GET('/service-jobs/{customer_branch_id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobs(
-    @Path('customer_branch_id') String customerBranchId,
+  /// API fetch service jobs by member_id (user id หลัง login)
+  @GET('/members/{member_id}/service-jobs')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobsByMember(
+    @Path('member_id') String memberId,
   );
 
   /// API fetch service job detail by service id
@@ -60,23 +60,28 @@ abstract class AppClient {
     @Path('service_id') String serviceId,
   );
 
-  /// API fetch products by customer branch
-  @GET('/products/{customer_branch_id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchProductsByBranch(
-    @Path('customer_branch_id') String customerBranchId,
+  /// API fetch products by member_id (user id หลัง login)
+  @GET('/members/{member_id}/products')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchProductsByMember(
+    @Path('member_id') String memberId,
   );
 
-  /// API fetch product detail by product id
+  /// API fetch product detail by product id (optional interval for graph, default 10)
   @GET('/product/{product_id}')
   Future<HttpResponse<Map<String, dynamic>?>> fetchProductDetail(
     @Path('product_id') String productId,
+    @Query('interval') int? interval,
   );
 
-  /// API fetch article highlight (carousel for home/article)
+  /// API fetch article highlight (carousel)
   @GET('/article-highlight')
   Future<HttpResponse<Map<String, dynamic>?>> fetchArticleHighlight();
 
-  /// API fetch articles list
+  /// API fetch article list
+  @GET('/article')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleList();
+
+  /// API fetch articles list (alias)
   @GET('/articles')
   Future<HttpResponse<Map<String, dynamic>?>> fetchArticles();
 
@@ -86,15 +91,25 @@ abstract class AppClient {
     @Path('id') String id,
   );
 
-  /// API fetch related articles (keep reading) - excludes current article
+  /// API fetch related articles (keep reading)
   @GET('/article-keepreading/{id}')
   Future<HttpResponse<Map<String, dynamic>?>> fetchArticleKeepReading(
     @Path('id') String id,
   );
 
-  /// API fetch contact us by branch
-  @GET('/contact-us/{branch_id}')
+  /// API fetch contact us by member_id (https://services.delta-compressor.co.th/contact-us/{member_id})
+  @GET('/contact-us/{member_id}')
   Future<HttpResponse<Map<String, dynamic>?>> fetchContactUs(
-    @Path('branch_id') String branchId,
+    @Path('member_id') String memberId,
+  );
+
+  /// API fetch active background
+  @GET('/active-background')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchActiveBackground();
+
+  /// API forgot password
+  @POST('/forgetpsw')
+  Future<HttpResponse<Map<String, dynamic>>> forgetPassword(
+    @Body() Map<String, dynamic> body,
   );
 }

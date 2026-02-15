@@ -42,9 +42,9 @@ class ProfileRepo extends AppRepository with ProfileDataSource {
   @override
   Future<RepoResult<ContactUsData>> fetchContactUs() async {
     try {
-      final branchId =
-          AppPreferences().getCustomerData()?.branchId?.toString() ?? '0';
-      final response = await requireRemote.fetchContactUs(branchId);
+      final memberId =
+          AppPreferences().getUserData()?.id.toString() ?? '0';
+      final response = await requireRemote.fetchContactUs(memberId);
       final body = response.data;
       if (body == null) {
         return RepoResult.empty();
