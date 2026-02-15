@@ -2,15 +2,18 @@ import 'package:delta_compressor_202501017/core/data/remote/models/response/app_
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/viewmodels/app_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/repository/introductions_repo.dart';
+import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:go_router/go_router.dart';
 
 class OnboardingViewmodel extends AppViewModel {
   OnboardingViewmodel({
     required super.context,
     required this.introductionsDataSource,
+    required this.homeDataSource,
   });
 
   final IntroductionsDataSource introductionsDataSource;
+  final HomeDataSource homeDataSource;
 
   UiResult<List<OnboardingItem>> _onboardingItems = UiResult.loading();
   UiResult<List<OnboardingItem>> get onboardingItems => _onboardingItems;
@@ -64,17 +67,41 @@ class OnboardingViewmodel extends AppViewModel {
     }
   }
 
-  void completeOnboarding() {
+  Future<void> completeOnboarding() async {
+    final pendingVersion = appPreferences.getPendingIntroductionVersion();
+    if (pendingVersion != null) {
+      appPreferences.setIntroductionVersion(pendingVersion);
+      appPreferences.setPendingIntroductionVersion(null);
+    }
     appPreferences.setFirstIntroduction(false);
-    if (context.mounted) {
-      context.go('/login');
+    if (!context.mounted) return;
+    final userData = appPreferences.getUserData();
+    final customerData = appPreferences.getCustomerData();
+    if (userData != null && customerData != null) {
+      final homeResult = await homeDataSource.fetchHomeData();
+      HomeRepo.setPreloaded(homeResult);
+      if (context.mounted) context.go('/home');
+    } else {
+      if (context.mounted) context.go('/login');
     }
   }
 
-  void skipOnboarding() {
+  Future<void> skipOnboarding() async {
+    final pendingVersion = appPreferences.getPendingIntroductionVersion();
+    if (pendingVersion != null) {
+      appPreferences.setIntroductionVersion(pendingVersion);
+      appPreferences.setPendingIntroductionVersion(null);
+    }
     appPreferences.setFirstIntroduction(false);
-    if (context.mounted) {
-      context.go('/login');
+    if (!context.mounted) return;
+    final userData = appPreferences.getUserData();
+    final customerData = appPreferences.getCustomerData();
+    if (userData != null && customerData != null) {
+      final homeResult = await homeDataSource.fetchHomeData();
+      HomeRepo.setPreloaded(homeResult);
+      if (context.mounted) context.go('/home');
+    } else {
+      if (context.mounted) context.go('/login');
     }
   }
 }

@@ -12,6 +12,7 @@ class AppPreferences {
   static const String _keyIsFirstLaunch = 'ISFIRSTRUN';
   static const String _keyLanguage = 'language';
   static const String _keyIntroductionVersion = 'introduction_version';
+  static const String _keyPendingIntroductionVersion = 'pending_introduction_version';
   static const String _keyFirstIntroduction = 'first_introduction';
   static const String _keyUserData = 'user_data';
   static const String _keyCustomerData = 'customer_data';
@@ -62,6 +63,19 @@ class AppPreferences {
   /// Set introduction version
   void setIntroductionVersion(String version) {
     _appLocalStorage.write(key: _keyIntroductionVersion, value: version);
+  }
+
+  /// Pending version เก็บไว้ก่อน จะ apply เมื่อ user กด Get start/Skip ใน onboarding
+  void setPendingIntroductionVersion(String? version) {
+    if (version == null) {
+      _appLocalStorage.delete(_keyPendingIntroductionVersion);
+    } else {
+      _appLocalStorage.write(key: _keyPendingIntroductionVersion, value: version);
+    }
+  }
+
+  String? getPendingIntroductionVersion() {
+    return _appLocalStorage.read<String>(_keyPendingIntroductionVersion);
   }
 
   /// Check if first introduction should be shown

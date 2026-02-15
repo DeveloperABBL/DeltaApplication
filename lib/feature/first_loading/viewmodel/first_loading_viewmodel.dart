@@ -52,6 +52,7 @@ class FirstLoadingViewmodel extends AppViewModel {
   Future<void> _checkAndHandleIntroductions() async {
     try {
       // 1. เช็ค introductions version ก่อน (อัปเดต first_introduction ตาม version)
+      //    เมื่อ user กด Get start หรือ Skip จาก onboarding จะไปหน้า login → ค่อยเช็คถ้า login อยู่แล้วไป /home ที่หน้า login
       final introductionsResult =
           await introductionsDataSource.fetchAppIntroductions();
 
@@ -65,8 +66,12 @@ class FirstLoadingViewmodel extends AppViewModel {
         final localVersion = appPreferences.getIntroductionVersion();
 
         if (apiVersion != null && apiVersion != localVersion) {
-          appPreferences.setIntroductionVersion(apiVersion);
-          appPreferences.setFirstIntroduction(true);
+          // ยังไม่เปลี่ยน introduction_version / first_introduction — จะเปลี่ยนเมื่อ user กด Get start/Skip ใน onboarding
+          appPreferences.setPendingIntroductionVersion(apiVersion);
+          if (context.mounted) {
+            context.go('/onboarding');
+            return;
+          }
         }
       }
 
@@ -75,13 +80,10 @@ class FirstLoadingViewmodel extends AppViewModel {
       // 2. ถ้ามี login อยู่แล้ว → ไป /home
       final userData = appPreferences.getUserData();
       final customerData = appPreferences.getCustomerData();
-
       if (userData != null && customerData != null) {
         final homeResult = await homeDataSource.fetchHomeData();
         HomeRepo.setPreloaded(homeResult);
-        if (context.mounted) {
-          context.go('/home');
-        }
+        if (context.mounted) context.go('/home');
         return;
       }
 

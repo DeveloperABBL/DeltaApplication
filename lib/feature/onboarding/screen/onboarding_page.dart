@@ -3,9 +3,9 @@ import 'package:delta_compressor_202501017/core/data/remote/models/response/app_
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/repository/introductions_repo.dart';
+import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:delta_compressor_202501017/feature/onboarding/viewmodel/onboarding_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +22,7 @@ class OnboardingPage extends StatelessWidget {
       create: (context) => OnboardingViewmodel(
         context: context,
         introductionsDataSource: IntroductionsRepo(),
+        homeDataSource: HomeRepo(),
       ),
       child: const OnboardingWidget(),
     );
@@ -231,35 +232,40 @@ class _OnboardingWidgetState extends State<OnboardingWidget> {
                   },
                 ),
                 SizedBox(height: 16.h),
-                // Content (HTML)
-                if (item.content != null && item.content!.isNotEmpty)
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Html(
-                        data: item.content!,
-                        shrinkWrap: true,
-                        style: {
-                          'h1': Style(
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
+                // Title (success) + Subtitle (light) — ข้อความธรรมดา
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (item.title != null && item.title!.isNotEmpty)
+                          AppText(
+                            item.title!,
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
                           ),
-                          'h2': Style(
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
+                        if (item.title != null && item.title!.isNotEmpty &&
+                            item.subtitle != null && item.subtitle!.isNotEmpty)
+                          SizedBox(height: 12.h),
+                        if (item.subtitle != null && item.subtitle!.isNotEmpty)
+                          AppText(
+                            item.subtitle!,
+                            style: TextStyle(
+                              color: AppColors.light,
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w400,
+                              height: 1.4,
+                            ),
                           ),
-                          'p': Style(
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
-                          ),
-                          'body': Style(
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
-                          ),
-                        },
-                      ),
+                      ],
                     ),
                   ),
+                ),
               ],
             ),
           ),

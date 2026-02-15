@@ -1,10 +1,12 @@
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
+import 'package:delta_compressor_202501017/core/viewmodels/app_preferences.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/authentication/models/login_response.dart';
 import 'package:delta_compressor_202501017/feature/authentication/repository/authentication_repo.dart';
 import 'package:delta_compressor_202501017/feature/authentication/viewmodel/authentication_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/authentication/screen/forgot_password_page.dart';
+import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -44,6 +46,16 @@ class _LoginWidgetState extends State<LoginWidget> {
     super.initState();
     _viewModel = context.read<AuthenticationViewModel>();
     _viewModel.attachContext(context);
+    // ถ้ามี login อยู่แล้ว (มาจาก onboarding Get start/Skip หรือ first loading) → ไป /home
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = AppPreferences();
+      if (prefs.getUserData() != null && prefs.getCustomerData() != null) {
+        final homeResult = await HomeRepo().fetchHomeData();
+        HomeRepo.setPreloaded(homeResult);
+        if (!mounted) return;
+        context.go('/home');
+      }
+    });
   }
 
   @override
