@@ -255,15 +255,34 @@ class _ProfileWidgetState extends State<ProfileWidget> {
           ),
         ),
         SizedBox(height: 8.h),
-        // 5. Address light
-        AppText(
-          contact.address,
-          style: TextStyle(
-            color: AppColors.light,
-            fontSize: 22.sp,
-            height: 1.4,
+        // 5. Address light - clickable -> map_url (like map image)
+        if (contact.mapUrl != null && contact.mapUrl!.isNotEmpty)
+          InkWell(
+            onTap: () => _launchUrl(contact.mapUrl),
+            borderRadius: BorderRadius.circular(8.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 4.h),
+              child: AppText(
+                contact.address,
+                style: TextStyle(
+                  color: AppColors.light,
+                  fontSize: 22.sp,
+                  height: 1.4,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.light.withOpacity(0.7),
+                ),
+              ),
+            ),
+          )
+        else
+          AppText(
+            contact.address,
+            style: TextStyle(
+              color: AppColors.light,
+              fontSize: 22.sp,
+              height: 1.4,
+            ),
           ),
-        ),
         SizedBox(height: 20.h),
         // 6. tel, email, website, youtube, facebook - icon row
         Wrap(

@@ -101,6 +101,15 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return AppColors.light;
   }
 
+  String _statusDisplay(String status) {
+    final lower = status.toLowerCase();
+    if (lower.contains('complete')) return 'Completed';
+    if (lower.contains('cancel')) return 'Cancelled';
+    if (lower.contains('pending')) return 'Pending';
+    if (lower.contains('progress')) return 'Progressing';
+    return status;
+  }
+
   void _openWebView(String url) {
     Navigator.push(
       context,
@@ -215,7 +224,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                   borderRadius: BorderRadius.circular(999.r),
                 ),
                 child: AppText(
-                  _detail!.status,
+                  _statusDisplay(_detail!.status),
                   style: TextStyle(
                     color: AppColors.light,
                     fontSize: 16.sp,
@@ -395,7 +404,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                   borderRadius: BorderRadius.circular(999.r),
                 ),
                 child: AppText(
-                  task.status,
+                  _statusDisplay(task.status),
                   style: TextStyle(
                     color: AppColors.light,
                     fontSize: 16.sp,

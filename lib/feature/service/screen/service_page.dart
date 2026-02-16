@@ -202,11 +202,11 @@ class _ServiceWidgetState extends State<ServiceWidget> {
 
   String _statusDisplay(String status) {
     final lower = status.toLowerCase();
-    if (lower.contains('complete')) return 'COMPLETE';
-    if (lower.contains('cancel')) return 'CANCEL';
-    if (lower.contains('pending')) return 'PENDING';
-    if (lower.contains('progress')) return 'INPROGRESS';
-    return status.toUpperCase();
+    if (lower.contains('complete')) return 'Completed';
+    if (lower.contains('cancel')) return 'Cancelled';
+    if (lower.contains('pending')) return 'Pending';
+    if (lower.contains('progress')) return 'Progressing';
+    return status;
   }
 
   Widget _serviceTypeIcon(String serviceType) {
