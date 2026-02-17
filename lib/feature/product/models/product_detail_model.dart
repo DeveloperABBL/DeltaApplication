@@ -10,7 +10,12 @@ double _toDoubleOrZero(dynamic v) => _toDouble(v) ?? 0;
 int? _toInt(dynamic v) {
   if (v == null) return null;
   if (v is num) return v.toInt();
-  return int.tryParse(v.toString());
+  final s = v.toString();
+  final i = int.tryParse(s);
+  if (i != null) return i;
+  // API อาจส่ง "664.00" (string มีทศนิยม) -> parse เป็น double ก่อนแล้วค่อย toInt
+  final d = double.tryParse(s);
+  return d?.toInt();
 }
 
 /// Response from GET /product/{product_id}

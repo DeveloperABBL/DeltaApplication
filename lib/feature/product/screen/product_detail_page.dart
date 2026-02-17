@@ -10,6 +10,60 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+class YAxisResult {
+  final int minY;
+  final int maxY;
+  final int interval;
+
+  YAxisResult(this.minY, this.maxY, this.interval);
+}
+
+int _niceInterval(int raw) {
+  if (raw <= 0) return 1;
+  final magnitude = (raw.abs().toString().length).toDouble();
+  final scale = math.pow(10, magnitude - 1).toInt();
+  final normalized = raw / scale;
+  if (normalized <= 1) return 1 * scale;
+  if (normalized <= 2) return 2 * scale;
+  if (normalized <= 5) return 5 * scale;
+  return 10 * scale;
+}
+
+YAxisResult computeYAxis5Ticks(List<FlSpot> spots,
+    {int defaultMin = 0, int defaultMax = 10}) {
+  if (spots.isEmpty) {
+    return YAxisResult(defaultMin, defaultMax, (defaultMax - defaultMin) ~/ 4);
+  }
+
+  double minData = spots.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+  double maxData = spots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+
+  int minVal = minData.floor();
+  int maxVal = maxData.ceil();
+
+  if (minVal == maxVal) {
+    maxVal += 4;
+  }
+
+  int range = maxVal - minVal;
+
+  // อยากได้ 5 แกน → 4 ช่อง
+  int rawInterval = (range / 4).ceil();
+
+  int interval = _niceInterval(rawInterval);
+
+  int niceMin = (minVal ~/ interval) * interval;
+  int niceMax = niceMin + interval * 4;
+
+  // ให้ max คุ้มค่าข้อมูลไม่ทะลุกราฟ (ขยับ niceMax ขึ้นเป็นช่วง interval ถ้าข้อมูลเกิน)
+  if (niceMax < maxVal) {
+    final needMax = (maxVal / interval).ceil() * interval;
+    niceMax = needMax < maxVal ? needMax + interval : needMax;
+  }
+
+  return YAxisResult(niceMin, niceMax, interval);
+}
+
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
 
@@ -621,51 +675,75 @@ class _ProductDetailPageState extends State<ProductDetailPage>
       padding: EdgeInsets.all(16.w),
       child: Column(
         children: [
-          if (overviewData.systemPressure.isNotEmpty)
-            _buildLineChart(
-              title: 'System Pressure (Last 6 Hours)',
-              spots: overviewData.systemPressure
+          if (overviewData.systemPressure.isNotEmpty) ...[
+            () {
+              final spots = overviewData.systemPressure
                   .map((p) => FlSpot(p.x, p.y))
-                  .toList(),
-              minY: 0,
-              maxY: 10,
-              color: const Color(0xFF9C27B0),
-              interval: 5,
-            ),
-          if (overviewData.systemPressure.isNotEmpty) SizedBox(height: 24.h),
-          if (overviewData.systemTemperature.isNotEmpty)
-            _buildLineChart(
-              title: 'System Temperature (°C) (Last 6 Hours)',
-              spots: overviewData.systemTemperature
+                  .toList();
+              final axis = computeYAxis5Ticks(spots,
+                  defaultMin: 0, defaultMax: 10);
+              return _buildLineChart(
+                title: 'System Pressure (Last 6 Hours)',
+                spots: spots,
+                minY: axis.minY.toDouble(),
+                maxY: axis.maxY.toDouble(),
+                color: const Color(0xFF9C27B0),
+                interval: axis.interval.toDouble(),
+              );
+            }(),
+            SizedBox(height: 24.h),
+          ],
+          if (overviewData.systemTemperature.isNotEmpty) ...[
+            () {
+              final spots = overviewData.systemTemperature
                   .map((p) => FlSpot(p.x, p.y))
-                  .toList(),
-              minY: 0,
-              maxY: 120,
-              color: const Color(0xFF2196F3),
-              interval: 30,
-            ),
-          if (overviewData.systemTemperature.isNotEmpty) SizedBox(height: 24.h),
-          if (overviewData.mainCurrent.isNotEmpty)
-            _buildLineChart(
-              title: 'Main Current (A)',
-              spots: overviewData.mainCurrent
+                  .toList();
+              final axis = computeYAxis5Ticks(spots,
+                  defaultMin: 0, defaultMax: 120);
+              return _buildLineChart(
+                title: 'System Temperature (°C) (Last 6 Hours)',
+                spots: spots,
+                minY: axis.minY.toDouble(),
+                maxY: axis.maxY.toDouble(),
+                color: const Color(0xFF2196F3),
+                interval: axis.interval.toDouble(),
+              );
+            }(),
+            SizedBox(height: 24.h),
+          ],
+          if (overviewData.mainCurrent.isNotEmpty) ...[
+            () {
+              final spots = overviewData.mainCurrent
                   .map((p) => FlSpot(p.x, p.y))
-                  .toList(),
-              minY: 0,
-              maxY: 100,
-              color: AppColors.success,
-              interval: 25,
-            ),
-          if (overviewData.mainCurrent.isNotEmpty) SizedBox(height: 24.h),
+                  .toList();
+              final axis = computeYAxis5Ticks(spots,
+                  defaultMin: 0, defaultMax: 100);
+              return _buildLineChart(
+                title: 'Main Current (A)',
+                spots: spots,
+                minY: axis.minY.toDouble(),
+                maxY: axis.maxY.toDouble(),
+                color: AppColors.success,
+                interval: axis.interval.toDouble(),
+              );
+            }(),
+            SizedBox(height: 24.h),
+          ],
           if (overviewData.power.isNotEmpty)
-            _buildLineChart(
-              title: 'Power (kw)',
-              spots: overviewData.power.map((p) => FlSpot(p.x, p.y)).toList(),
-              minY: 0,
-              maxY: 100,
-              color: const Color(0xFFFFEB3B),
-              interval: 25,
-            ),
+            () {
+              final spots =
+                  overviewData.power.map((p) => FlSpot(p.x, p.y)).toList();
+              final axis = computeYAxis5Ticks(spots,
+                  defaultMin: 0, defaultMax: 100);
+              return _buildLineChart(
+                title: 'Power (kw)',
+                spots: spots,
+                minY: axis.minY.toDouble(),
+                maxY: axis.maxY.toDouble(),
+                color: const Color(0xFFFFEB3B),
+                interval: axis.interval.toDouble(),
+              );
+            }(),
           if (overviewData.systemPressure.isEmpty &&
               overviewData.systemTemperature.isEmpty &&
               overviewData.mainCurrent.isEmpty &&
@@ -690,6 +768,15 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     required Color color,
     required double interval,
   }) {
+    final minX = spots.isEmpty
+        ? 0.0
+        : spots.map((s) => s.x).reduce(math.min);
+    final maxX = spots.isEmpty
+        ? 5.0
+        : spots.map((s) => s.x).reduce(math.max);
+    // แกน X แสดงป้ายทุก 1 ชม เริ่มจากเวลาแรกของข้อมูล (เช่น 10:30 → 11:30 → 12:30)
+    const oneHourMs = 3600000.0;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -717,7 +804,6 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: Colors.grey.withOpacity(0.2),
                     strokeWidth: 1,
-                    dashArray: [5, 5],
                   ),
                 ),
                 titlesData: FlTitlesData(
@@ -732,30 +818,25 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      interval: 1,
+                      interval: oneHourMs,
                       getTitlesWidget: (value, meta) {
-                        const hours = [
-                          '12:00',
-                          '13:00',
-                          '14:00',
-                          '15:00',
-                          '16:00',
-                          '17:00',
-                        ];
-                        final i = value.toInt();
-                        if (i >= 0 && i < hours.length) {
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8.h),
-                            child: Text(
-                              hours[i],
-                              style: TextStyle(
-                                color: AppColors.grey,
-                                fontSize: 12.sp,
-                              ),
+                        final v = value.toDouble();
+                        final n = ((v - minX) / oneHourMs).round();
+                        final displayMs = minX + n * oneHourMs;
+                        final ms = displayMs.round();
+                        final dt = DateTime.fromMillisecondsSinceEpoch(ms);
+                        final label =
+                            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8.h),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: AppColors.grey,
+                              fontSize: 12.sp,
                             ),
-                          );
-                        }
-                        return const SizedBox.shrink();
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -781,8 +862,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     width: 1,
                   ),
                 ),
-                minX: 0,
-                maxX: 5,
+                minX: minX,
+                maxX: maxX,
                 minY: minY,
                 maxY: maxY,
                 lineBarsData: [
@@ -792,19 +873,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     color: color,
                     barWidth: 3,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) =>
-                          FlDotCirclePainter(
-                            radius: 4,
-                            color: color,
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          ),
-                    ),
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: color.withOpacity(0.2),
+                      color: color.withOpacity(0.25),
                     ),
                   ),
                 ],
