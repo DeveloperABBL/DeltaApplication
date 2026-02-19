@@ -774,8 +774,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     final maxX = spots.isEmpty
         ? 5.0
         : spots.map((s) => s.x).reduce(math.max);
-    // แกน X แสดงป้ายทุก 1 ชม เริ่มจากเวลาแรกของข้อมูล (เช่น 10:30 → 11:30 → 12:30)
-    const oneHourMs = 3600000.0;
+    // แกน X แสดงป้ายทุกครึ่งชม. เริ่มจากเวลาแรกของข้อมูล (เช่น 10:00 → 10:30 → 11:00)
+    const halfHourMs = 1800000.0; // 30 นาที
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -818,11 +818,13 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      interval: oneHourMs,
+                      interval: halfHourMs,
                       getTitlesWidget: (value, meta) {
                         final v = value.toDouble();
-                        final n = ((v - minX) / oneHourMs).round();
-                        final displayMs = minX + n * oneHourMs;
+                        final n = ((v - minX) / halfHourMs).round();
+                        // แสดง label ทุก 1 ชม. (n คู่), ตำแหน่งครึ่งชม. แสดงว่าง (08:30, null, 09:30, null ...)
+                        if (n % 2 != 0) return const SizedBox.shrink();
+                        final displayMs = minX + n * halfHourMs;
                         final ms = displayMs.round();
                         final dt = DateTime.fromMillisecondsSinceEpoch(ms);
                         final label =
