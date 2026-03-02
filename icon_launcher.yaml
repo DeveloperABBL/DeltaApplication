@@ -1,6 +1,6 @@
 # command: dart run icons_launcher:create --path=icon_launcher.yaml
 icons_launcher:
-  image_path: "assets/png/iconApp.png"
+  image_path: "assets/png/iconApp.jpg"
   platforms:
     android:
       enable: true
