@@ -1,4 +1,4 @@
-package com.example.delta_compressor_202501017
+package com.delta.application
 
 import io.flutter.embedding.android.FlutterActivity
 
