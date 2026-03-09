@@ -10,6 +10,14 @@ mixin AuthenticationDataSource {
     required String email,
     required String password,
   });
+
+  /// ส่ง FCM device token ไปยัง backend หลัง login (สำหรับ push notification)
+  Future<RepoResult<bool>> storeDeviceToken({
+    required int memberId,
+    required String notificationToken,
+    String? deviceModel,
+    String? devicePlatform,
+  });
 }
 
 /// Implementation
@@ -73,6 +81,34 @@ class AuthenticationRepo extends AppRepository with AuthenticationDataSource {
         }
       }
 
+      return RepoResult.error(error: e);
+    } on Exception catch (e) {
+      return RepoResult.error(error: e);
+    }
+  }
+
+  @override
+  Future<RepoResult<bool>> storeDeviceToken({
+    required int memberId,
+    required String notificationToken,
+    String? deviceModel,
+    String? devicePlatform,
+  }) async {
+    try {
+      final response = await requireRemote.storeDeviceToken({
+        'member_id': memberId,
+        'notification_token': notificationToken,
+        if (deviceModel != null) 'device_model': deviceModel,
+        if (devicePlatform != null) 'device_platform': devicePlatform,
+      });
+
+      if (response.response.statusCode == 200) {
+        return RepoResult.success(data: true);
+      }
+      return RepoResult.error(
+        error: Exception('Failed to save device token'),
+      );
+    } on DioException catch (e) {
       return RepoResult.error(error: e);
     } on Exception catch (e) {
       return RepoResult.error(error: e);

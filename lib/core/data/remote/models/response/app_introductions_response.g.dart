@@ -6,7 +6,15 @@ part of 'app_introductions_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-// fromJson is overridden in app_introductions_response.dart for nested API format
+AppIntroductionsResponse _$AppIntroductionsResponseFromJson(
+  Map<String, dynamic> json,
+) => AppIntroductionsResponse(
+  status: json['status'] as bool,
+  introductionVersion: json['introductionVersion'] as String?,
+  data: (json['data'] as List<dynamic>?)
+      ?.map((e) => OnboardingItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
 
 Map<String, dynamic> _$AppIntroductionsResponseToJson(
   AppIntroductionsResponse instance,

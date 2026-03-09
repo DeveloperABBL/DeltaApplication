@@ -1,3 +1,4 @@
+import 'package:delta_compressor_202501017/core/utils/notification_helper.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/viewmodels/app_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/authentication/models/login_response.dart';
@@ -73,6 +74,16 @@ class AuthenticationViewModel extends AppViewModel {
         }
         if (loginResponse.customer != null) {
           appPreferences.saveCustomerData(loginResponse.customer!);
+        }
+
+        // ส่ง FCM device token ไป backend สำหรับ push notification
+        final fcmToken = await NotificationHelper.getToken();
+        if (fcmToken != null && loginResponse.user != null) {
+          await authenticationDataSource.storeDeviceToken(
+            memberId: loginResponse.user!.id,
+            notificationToken: fcmToken,
+            devicePlatform: NotificationHelper.devicePlatform,
+          );
         }
 
         _loginResult = UiResult.success(data: loginResponse);

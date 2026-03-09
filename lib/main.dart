@@ -1,5 +1,7 @@
 import 'package:delta_compressor_202501017/core/env/app_evnironment.dart';
 import 'package:delta_compressor_202501017/core/env/dev_environment.dart';
+import 'package:delta_compressor_202501017/core/utils/notification_helper.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,6 +18,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(_lightStatusBar);
+
+  // Initialize Firebase (ต้องมี GoogleService-Info.plist / google-services.json)
+  await Firebase.initializeApp();
+
+  // Initialize Firebase Messaging & Local Notifications
+  await NotificationHelper.initialize();
 
   // Initialize AppEnvironment
   final appEnvironment = DevEnvironment();

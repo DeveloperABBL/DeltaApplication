@@ -112,4 +112,11 @@ abstract class AppClient {
   Future<HttpResponse<Map<String, dynamic>>> forgetPassword(
     @Body() Map<String, dynamic> body,
   );
+
+  /// API ส่ง device token สำหรับ push notification (Firebase)
+  /// เรียกหลัง login เพื่อให้ backend ส่ง push ได้
+  @POST('/device/token')
+  Future<HttpResponse<Map<String, dynamic>>> storeDeviceToken(
+    @Body() Map<String, dynamic> body,
+  );
 }
