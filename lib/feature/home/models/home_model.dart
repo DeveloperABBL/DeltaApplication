@@ -73,6 +73,9 @@ class ProductItem {
   final double? temperature; // in Celsius
   final double? pressure; // in BAR
   final String? image;
+  final String? productType; // "Air Compressor", "Air Dryer", "Nitrogen"
+  final double? nitrogenPressure;
+  final double? nitrogenPurity;
 
   ProductItem({
     required this.id,
@@ -82,6 +85,9 @@ class ProductItem {
     this.temperature,
     this.pressure,
     this.image,
+    this.productType,
+    this.nitrogenPressure,
+    this.nitrogenPurity,
   });
 
   factory ProductItem.fromJson(Map<String, dynamic> json) {
@@ -108,6 +114,9 @@ class ProductItem {
       temperature: _toDouble(temp),
       pressure: _toDouble(press),
       image: json['image']?.toString(),
+      productType: (json['product_type'] ?? 'Air Compressor').toString(),
+      nitrogenPressure: _toDouble(json['nitrogen_pressure'] ?? current?['nitrogen_pressure']),
+      nitrogenPurity: _toDouble(json['nitrogen_purity'] ?? current?['nitrogen_purity']),
     );
   }
 

@@ -549,58 +549,104 @@ class _HomeWidgetState extends State<HomeWidget> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (product.temperature != null) ...[
-                            Icon(
-                              product.temperature! > 100
-                                  ? Symbols.local_fire_department
-                                  : Symbols.ac_unit,
-                              size: 18,
-                              color: product.temperature! > 100
-                                  ? AppColors.danger
-                                  : AppColors.primary,
+                          if (product.productType == 'Nitrogen') ...[
+                            if (product.nitrogenPurity != null) ...[
+                              Icon(
+                                Symbols.water_drop,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 4.w),
+                            ],
+                            AppText(
+                              product.nitrogenPurity != null
+                                  ? '${product.nitrogenPurity!.toStringAsFixed(0)} %'
+                                  : '_ _ %',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: product.nitrogenPurity != null
+                                    ? AppColors.primary
+                                    : AppColors.dark,
+                              ),
                             ),
-                            SizedBox(width: 4.w),
+                          ] else ...[
+                            if (product.temperature != null) ...[
+                              Icon(
+                                product.temperature! > 100
+                                    ? Symbols.local_fire_department
+                                    : Symbols.ac_unit,
+                                size: 18,
+                                color: product.temperature! > 100
+                                    ? AppColors.danger
+                                    : AppColors.primary,
+                              ),
+                              SizedBox(width: 4.w),
+                            ],
+                            AppText(
+                              product.temperature != null
+                                  ? '${product.temperature!.toStringAsFixed(0)}${product.temperature! > 100 ? '°C' : ' °C'}'
+                                  : '_ _ °C',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: product.temperature != null
+                                    ? (product.temperature! > 100
+                                          ? AppColors.danger
+                                          : AppColors.primary)
+                                    : AppColors.dark,
+                              ),
+                            ),
                           ],
-                          AppText(
-                            product.temperature != null
-                                ? '${product.temperature!.toStringAsFixed(0)}${product.temperature! > 100 ? '°C' : ' °C'}'
-                                : '_ _ °C',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                              color: product.temperature != null
-                                  ? (product.temperature! > 100
-                                        ? AppColors.danger
-                                        : AppColors.primary)
-                                  : AppColors.dark,
-                            ),
-                          ),
                         ],
                       ),
                       SizedBox(height: 6.h),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (product.pressure != null) ...[
-                            Icon(
-                              Symbols.settings,
-                              size: 18,
-                              color: AppColors.primary,
+                          if (product.productType == 'Nitrogen') ...[
+                            if (product.nitrogenPressure != null) ...[
+                              Icon(
+                                Symbols.settings,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 4.w),
+                            ],
+                            AppText(
+                              product.nitrogenPressure != null
+                                  ? '${product.nitrogenPressure!.toStringAsFixed(0)} BAR'
+                                  : '_ _ BAR',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: product.nitrogenPressure != null
+                                    ? AppColors.primary
+                                    : AppColors.dark,
+                              ),
                             ),
-                            SizedBox(width: 4.w),
+                          ] else ...[
+                            if (product.pressure != null) ...[
+                              Icon(
+                                Symbols.settings,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 4.w),
+                            ],
+                            AppText(
+                              product.pressure != null
+                                  ? '${product.pressure!.toStringAsFixed(0)} BAR'
+                                  : '_ _ BAR',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: product.pressure != null
+                                    ? AppColors.primary
+                                    : AppColors.dark,
+                              ),
+                            ),
                           ],
-                          AppText(
-                            product.pressure != null
-                                ? '${product.pressure!.toStringAsFixed(0)} BAR'
-                                : '_ _ BAR',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                              color: product.pressure != null
-                                  ? AppColors.primary
-                                  : AppColors.dark,
-                            ),
-                          ),
                         ],
                       ),
                     ],
