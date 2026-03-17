@@ -31,6 +31,12 @@ class ProductDetail {
   final double? power;
   final int? runtime;
   final int? loadTime;
+  /// Nitrogen product: N2 flow (Nm3/hr)
+  final double? nitrogenFlow;
+  /// Nitrogen product: purity (%)
+  final double? nitrogenPurity;
+  /// Nitrogen product: pressure (BAR)
+  final double? nitrogenPressure;
   final String? image;
   final String? productBackground;
   final EnergyData? energyData;
@@ -48,6 +54,9 @@ class ProductDetail {
     this.power,
     this.runtime,
     this.loadTime,
+    this.nitrogenFlow,
+    this.nitrogenPurity,
+    this.nitrogenPressure,
     this.image,
     this.productBackground,
     this.energyData,
@@ -70,6 +79,9 @@ class ProductDetail {
       power: _toDouble(json['power'] ?? current?['motor_power']),
       runtime: _toInt(json['runtime'] ?? current?['runtime']),
       loadTime: _toInt(json['load_time'] ?? current?['load_time']),
+      nitrogenFlow: _toDouble(current?['nitrogen_flow']),
+      nitrogenPurity: _toDouble(current?['nitrogen_purity']),
+      nitrogenPressure: _toDouble(current?['nitrogen_pressure']),
       image: json['image']?.toString(),
       productBackground: json['product_background']?.toString(),
       energyData: json['energy_data'] != null
@@ -129,12 +141,21 @@ class OverviewData {
   final List<GraphDataPoint> systemTemperature;
   final List<GraphDataPoint> mainCurrent;
   final List<GraphDataPoint> power;
+  /// Nitrogen product overview series
+  final List<GraphDataPoint>? nitrogenPressure;
+  final List<GraphDataPoint>? nitrogenPurity;
+  final List<GraphDataPoint>? nitrogenFlowMake;
+  final List<GraphDataPoint>? dewPointMake;
 
   OverviewData({
     required this.systemPressure,
     required this.systemTemperature,
     required this.mainCurrent,
     required this.power,
+    this.nitrogenPressure,
+    this.nitrogenPurity,
+    this.nitrogenFlowMake,
+    this.dewPointMake,
   });
 
   factory OverviewData.fromJson(Map<String, dynamic> json) {
@@ -158,8 +179,7 @@ class OverviewData {
     );
   }
 
-  /// จาก API Laravel: list ของ { date_time, air_pressure, temperature, motor_power, motor_output_current }
-  /// แปลงเป็น 4 ชุดกราฟ (x = เวลาเป็นตัวเลข, y = ค่า)
+  /// จาก API Laravel: list ของ { date_time, air_pressure, temperature, ... } หรือ Nitrogen: { date_time, nitrogen_pressure, nitrogen_purity, nitrogen_flow_make, dew_point_make }
   factory OverviewData.fromJsonList(List<Map<String, dynamic>> list) {
     double _toDouble(dynamic v) =>
         v is num ? v.toDouble() : (double.tryParse(v?.toString() ?? '') ?? 0);
@@ -175,13 +195,26 @@ class OverviewData {
     final systemTemperature = <GraphDataPoint>[];
     final mainCurrent = <GraphDataPoint>[];
     final power = <GraphDataPoint>[];
+    final nitrogenPressure = <GraphDataPoint>[];
+    final nitrogenPurity = <GraphDataPoint>[];
+    final nitrogenFlowMake = <GraphDataPoint>[];
+    final dewPointMake = <GraphDataPoint>[];
+
+    final isNitrogen = list.isNotEmpty && list.first.containsKey('nitrogen_pressure');
 
     for (final row in list) {
       final x = _xFromDateTime(row['date_time']);
-      systemPressure.add(GraphDataPoint(x: x, y: _toDouble(row['air_pressure'])));
-      systemTemperature.add(GraphDataPoint(x: x, y: _toDouble(row['temperature'])));
-      mainCurrent.add(GraphDataPoint(x: x, y: _toDouble(row['motor_output_current'])));
-      power.add(GraphDataPoint(x: x, y: _toDouble(row['motor_power'])));
+      if (isNitrogen) {
+        nitrogenPressure.add(GraphDataPoint(x: x, y: _toDouble(row['nitrogen_pressure'])));
+        nitrogenPurity.add(GraphDataPoint(x: x, y: _toDouble(row['nitrogen_purity'])));
+        nitrogenFlowMake.add(GraphDataPoint(x: x, y: _toDouble(row['nitrogen_flow_make'])));
+        dewPointMake.add(GraphDataPoint(x: x, y: _toDouble(row['dew_point_make'])));
+      } else {
+        systemPressure.add(GraphDataPoint(x: x, y: _toDouble(row['air_pressure'])));
+        systemTemperature.add(GraphDataPoint(x: x, y: _toDouble(row['temperature'])));
+        mainCurrent.add(GraphDataPoint(x: x, y: _toDouble(row['motor_output_current'])));
+        power.add(GraphDataPoint(x: x, y: _toDouble(row['motor_power'])));
+      }
     }
 
     return OverviewData(
@@ -189,6 +222,10 @@ class OverviewData {
       systemTemperature: systemTemperature,
       mainCurrent: mainCurrent,
       power: power,
+      nitrogenPressure: isNitrogen ? nitrogenPressure : null,
+      nitrogenPurity: isNitrogen ? nitrogenPurity : null,
+      nitrogenFlowMake: isNitrogen ? nitrogenFlowMake : null,
+      dewPointMake: isNitrogen ? dewPointMake : null,
     );
   }
 }

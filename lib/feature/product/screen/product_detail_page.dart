@@ -102,6 +102,9 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     _loadProductDetail();
   }
 
+  bool get _isNitrogen =>
+      _productDetail?.productType.toLowerCase() == 'nitrogen';
+
   Future<void> _loadProductDetail() async {
     final result = await _repo.fetchProductDetail(widget.productId);
     if (!mounted) return;
@@ -110,6 +113,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
       if (result.isSuccess) {
         _productDetail = result.data;
         _errorMessage = null;
+        if (_isNitrogen && _tabController.length != 2) {
+          _tabController.dispose();
+          _tabController = TabController(length: 2, vsync: this);
+        }
       } else {
         _productDetail = null;
         _errorMessage = result.hasError
@@ -236,11 +243,16 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                             fontWeight: FontWeight.w500,
                             fontStyle: FontStyle.italic,
                           ),
-                          tabs: const [
-                            Tab(text: 'Overview'),
-                            Tab(text: 'Energy Data'),
-                            Tab(text: 'Maintenance'),
-                          ],
+                          tabs: _isNitrogen
+                              ? const [
+                                  Tab(text: 'Overview'),
+                                  Tab(text: 'Maintenance'),
+                                ]
+                              : const [
+                                  Tab(text: 'Overview'),
+                                  Tab(text: 'Energy Data'),
+                                  Tab(text: 'Maintenance'),
+                                ],
                         ),
                         topPadding: 16.h,
                       ),
@@ -257,11 +269,16 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                   ),
                   child: TabBarView(
                     controller: _tabController,
-                    children: [
-                      _buildOverviewTab(),
-                      _buildEnergyDataTab(),
-                      _buildMaintenanceTab(),
-                    ],
+                    children: _isNitrogen
+                        ? [
+                            _buildOverviewTab(),
+                            _buildMaintenanceTab(),
+                          ]
+                        : [
+                            _buildOverviewTab(),
+                            _buildEnergyDataTab(),
+                            _buildMaintenanceTab(),
+                          ],
                   ),
                 ),
               ),
@@ -353,11 +370,20 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                   return CustomPaint(
                     painter: _AnimatedLinePainter(
                       animationValue: _lineAnimation.value,
-                      temperature: _productDetail!.temperature ?? 0,
-                      pressure: _productDetail!.pressure ?? 0,
-                      power: _productDetail!.power ?? 0,
+                      temperature: _isNitrogen
+                          ? (_productDetail!.nitrogenFlow ?? 0).toDouble()
+                          : (_productDetail!.temperature ?? 0).toDouble(),
+                      pressure: _isNitrogen
+                          ? (_productDetail!.nitrogenPressure ?? _productDetail!.pressure ?? 0).toDouble()
+                          : (_productDetail!.pressure ?? 0).toDouble(),
+                      power: _isNitrogen
+                          ? (_productDetail!.nitrogenPurity ?? 0).toDouble()
+                          : (_productDetail!.power ?? 0).toDouble(),
                       imageHeight: 250.h,
                       status: _productDetail!.status,
+                      topLabel: _isNitrogen ? 'N2 Flow' : null,
+                      leftLabel: _isNitrogen ? 'Purity' : null,
+                      rightLabel: _isNitrogen ? 'Pressure' : null,
                     ),
                     child: Container(),
                   );
@@ -368,9 +394,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 top: (tempCornerY - 25).clamp(8.0, double.infinity),
                 child: _buildDataPointOverlay(
                   icon: Symbols.device_thermostat,
-                  label: 'Temperature',
-                  value:
-                      '${(_productDetail!.temperature ?? 0).toStringAsFixed(0)} °c',
+                  label: _isNitrogen ? 'N2 Flow' : 'Temperature',
+                  value: _isNitrogen
+                      ? '${(_productDetail!.nitrogenFlow ?? 0).toStringAsFixed(0)} Nm3/hr'
+                      : '${(_productDetail!.temperature ?? 0).toStringAsFixed(0)} °c',
                   labelColor: _productDetail!.status.toLowerCase() == 'error'
                       ? AppColors.danger
                       : const Color(0xFF99E151),
@@ -381,9 +408,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 bottom: 8.h,
                 child: _buildDataPointOverlay(
                   icon: Symbols.battery_charging_90,
-                  label: 'Power',
-                  value:
-                      '${(_productDetail!.power ?? 0).toStringAsFixed(0)} kw',
+                  label: _isNitrogen ? 'Purity' : 'Power',
+                  value: _isNitrogen
+                      ? '${(_productDetail!.nitrogenPurity ?? 0).toStringAsFixed(0)} %'
+                      : '${(_productDetail!.power ?? 0).toStringAsFixed(0)} kw',
                   labelColor: _productDetail!.status.toLowerCase() == 'error'
                       ? AppColors.danger
                       : const Color(0xFF99E151),
@@ -395,8 +423,9 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 child: _buildDataPointOverlay(
                   icon: Symbols.avg_pace,
                   label: 'Pressure',
-                  value:
-                      '${(_productDetail!.pressure ?? 0).toStringAsFixed(0)} BAR',
+                  value: _isNitrogen
+                      ? '${(_productDetail!.nitrogenPressure ?? _productDetail!.pressure ?? 0).toStringAsFixed(0)} BAR'
+                      : '${(_productDetail!.pressure ?? 0).toStringAsFixed(0)} BAR',
                   labelColor: _productDetail!.status.toLowerCase() == 'error'
                       ? AppColors.danger
                       : const Color(0xFF99E151),
@@ -476,23 +505,41 @@ class _ProductDetailPageState extends State<ProductDetailPage>
           Expanded(
             flex: 1,
             child: Column(
-              children: [
-                _buildMetricCard(
-                  'Run Time',
-                  'RT2',
-                  '${_productDetail!.runtime ?? 0}',
-                  icon: Symbols.play_circle,
-                  iconColor: _statusColor,
-                ),
-                SizedBox(height: 10.h),
-                _buildMetricCard(
-                  'Load Time',
-                  'LT3',
-                  '${_productDetail!.loadTime ?? 0}',
-                  icon: Symbols.timer,
-                  iconColor: _statusColor,
-                ),
-              ],
+              children: _isNitrogen
+                  ? [
+                      _buildMetricCard(
+                        'Purity',
+                        '',
+                        '${(_productDetail!.nitrogenPurity ?? 0).toStringAsFixed(0)}',
+                        icon: Symbols.play_circle,
+                        iconColor: _statusColor,
+                      ),
+                      SizedBox(height: 10.h),
+                      _buildMetricCard(
+                        'Pressure',
+                        '',
+                        '${(_productDetail!.nitrogenPressure ?? _productDetail!.pressure ?? 0).toStringAsFixed(0)}',
+                        icon: Symbols.timer,
+                        iconColor: _statusColor,
+                      ),
+                    ]
+                  : [
+                      _buildMetricCard(
+                        'Run Time',
+                        'RT2',
+                        '${_productDetail!.runtime ?? 0}',
+                        icon: Symbols.play_circle,
+                        iconColor: _statusColor,
+                      ),
+                      SizedBox(height: 10.h),
+                      _buildMetricCard(
+                        'Load Time',
+                        'LT3',
+                        '${_productDetail!.loadTime ?? 0}',
+                        icon: Symbols.timer,
+                        iconColor: _statusColor,
+                      ),
+                    ],
             ),
           ),
         ],
@@ -634,17 +681,18 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Transform.translate(
-                      offset: Offset(0, -6.h),
-                      child: AppText(
-                        subtitle,
-                        style: TextStyle(
-                          color: AppColors.light,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w400,
+                    if (subtitle.isNotEmpty)
+                      Transform.translate(
+                        offset: Offset(0, -6.h),
+                        child: AppText(
+                          subtitle,
+                          style: TextStyle(
+                            color: AppColors.light,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -671,6 +719,42 @@ class _ProductDetailPageState extends State<ProductDetailPage>
       return const Center(child: CircularProgressIndicator());
     }
     final overviewData = _productDetail!.overviewData!;
+
+    if (_isNitrogen &&
+        overviewData.nitrogenPressure != null &&
+        overviewData.nitrogenPressure!.isNotEmpty) {
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          children: [
+            _buildNitrogenChart(
+              overviewData.nitrogenPressure!,
+              'N2 Pressure (BAR) (Last 6 Hours)',
+              const Color(0xFF9C27B0),
+            ),
+            SizedBox(height: 24.h),
+            _buildNitrogenChart(
+              overviewData.nitrogenPurity!,
+              'N2 Purity (%) (Last 6 Hours)',
+              const Color(0xFF2196F3),
+            ),
+            SizedBox(height: 24.h),
+            _buildNitrogenChart(
+              overviewData.nitrogenFlowMake!,
+              'N2 Flow (Last 6 Hours)',
+              AppColors.success,
+            ),
+            SizedBox(height: 24.h),
+            _buildNitrogenChart(
+              overviewData.dewPointMake!,
+              'Inlet Pressure (Last 6 Hours)',
+              const Color(0xFFFFEB3B),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -757,6 +841,23 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNitrogenChart(
+    List<GraphDataPoint> data,
+    String title,
+    Color color,
+  ) {
+    final spots = data.map((p) => FlSpot(p.x, p.y)).toList();
+    final axis = computeYAxis5Ticks(spots, defaultMin: 0, defaultMax: 10);
+    return _buildLineChart(
+      title: title,
+      spots: spots,
+      minY: axis.minY.toDouble(),
+      maxY: axis.maxY.toDouble(),
+      color: color,
+      interval: axis.interval.toDouble(),
     );
   }
 
@@ -1063,18 +1164,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
         ),
       );
     }
-    String formatNumber(double value) {
-      return value
-          .toStringAsFixed(2)
-          .replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
-    }
 
     final item = items.first;
     final valueText = item.sparePartUsedTime != null
-        ? '${formatNumber(item.sparePartUsedTime!)} hrs'
+        ? '${item.sparePartUsedTime!.round().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} hrs'
         : '—';
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.w),
@@ -1212,6 +1305,9 @@ class _AnimatedLinePainter extends CustomPainter {
   final double power;
   final double imageHeight;
   final String status;
+  final String? topLabel;
+  final String? leftLabel;
+  final String? rightLabel;
 
   _AnimatedLinePainter({
     required this.animationValue,
@@ -1220,6 +1316,9 @@ class _AnimatedLinePainter extends CustomPainter {
     required this.power,
     required this.imageHeight,
     required this.status,
+    this.topLabel,
+    this.leftLabel,
+    this.rightLabel,
   });
 
   bool get _isOnline => status.toLowerCase() == 'online';
@@ -1246,9 +1345,12 @@ class _AnimatedLinePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final labelColor = _isError ? AppColors.danger : greenColor;
+    final topLabelText = topLabel ?? 'Temperature';
+    final leftLabelText = leftLabel ?? 'Power';
+    final rightLabelText = rightLabel ?? 'Pressure';
 
-    // Temperature line
-    final tempLabel = _textSpan('Temperature', 14, labelColor);
+    // Temperature / N2 Flow line
+    final tempLabel = _textSpan(topLabelText, 14, labelColor);
     final tempTp = _layout(tempLabel);
     final tempStartX = centerX;
     final tempStartY = imageTop;
@@ -1267,8 +1369,8 @@ class _AnimatedLinePainter extends CustomPainter {
 
     // Text drawn by overlay widgets
 
-    // Power line (ตั้งฉาก: ท่อนแรกลงตรง แล้วค่อยแนวนอนไปซ้าย)
-    final powerLabel = _textSpan('Power', 14, labelColor);
+    // Power / Purity line (ตั้งฉาก: ท่อนแรกลงตรง แล้วค่อยแนวนอนไปซ้าย)
+    final powerLabel = _textSpan(leftLabelText, 14, labelColor);
     final powerTp = _layout(powerLabel);
     final powerStartX = centerX - 20.0;
     final powerEndY = size.height - 40.0;
@@ -1283,7 +1385,7 @@ class _AnimatedLinePainter extends CustomPainter {
     // Text drawn by overlay widgets
 
     // Pressure line (ตั้งฉาก: ท่อนแรกลงตรง แล้วค่อยแนวนอนไปขวา)
-    final pressureLabel = _textSpan('Pressure', 14, labelColor);
+    final pressureLabel = _textSpan(rightLabelText, 14, labelColor);
     final pressureTp = _layout(pressureLabel);
     final pressureStartX = centerX + 20.0;
     final pressureEndY = size.height - 40.0;
@@ -1416,6 +1518,9 @@ class _AnimatedLinePainter extends CustomPainter {
         old.pressure != pressure ||
         old.power != power ||
         old.imageHeight != imageHeight ||
-        old.status != status;
+        old.status != status ||
+        old.topLabel != topLabel ||
+        old.leftLabel != leftLabel ||
+        old.rightLabel != rightLabel;
   }
 }
