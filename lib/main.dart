@@ -1,6 +1,7 @@
 import 'package:delta_compressor_202501017/core/env/app_evnironment.dart';
 import 'package:delta_compressor_202501017/core/env/dev_environment.dart';
 import 'package:delta_compressor_202501017/core/utils/notification_helper.dart';
+import 'package:delta_compressor_202501017/feature/authentication/repository/authentication_repo.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +29,17 @@ void main() async {
   // Initialize AppEnvironment
   final appEnvironment = DevEnvironment();
   await appEnvironment.loadEnv();
+
+  // ส่ง FCM device token ไป backend ตอนเปิดแอป (member_id ว่างได้)
+  try {
+    final token = await NotificationHelper.getToken();
+    if (token != null) {
+      await AuthenticationRepo().storeDeviceToken(
+        notificationToken: token,
+        devicePlatform: NotificationHelper.devicePlatform,
+      );
+    }
+  } catch (_) {}
 
   runApp(MyApp(appEnvironment: appEnvironment));
 }

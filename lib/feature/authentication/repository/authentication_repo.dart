@@ -11,9 +11,10 @@ mixin AuthenticationDataSource {
     required String password,
   });
 
-  /// ส่ง FCM device token ไปยัง backend หลัง login (สำหรับ push notification)
+  /// ส่ง FCM device token ไปยัง backend (สำหรับ push notification)
+  /// memberId เป็น optional — ส่งได้ทั้งตอนเปิดแอป (ว่าง) และหลัง login (มี id)
   Future<RepoResult<bool>> storeDeviceToken({
-    required int memberId,
+    int? memberId,
     required String notificationToken,
     String? deviceModel,
     String? devicePlatform,
@@ -89,14 +90,14 @@ class AuthenticationRepo extends AppRepository with AuthenticationDataSource {
 
   @override
   Future<RepoResult<bool>> storeDeviceToken({
-    required int memberId,
+    int? memberId,
     required String notificationToken,
     String? deviceModel,
     String? devicePlatform,
   }) async {
     try {
       final response = await requireRemote.storeDeviceToken({
-        'member_id': memberId,
+        if (memberId != null) 'member_id': memberId,
         'notification_token': notificationToken,
         if (deviceModel != null) 'device_model': deviceModel,
         if (devicePlatform != null) 'device_platform': devicePlatform,
