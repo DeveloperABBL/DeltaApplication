@@ -29,8 +29,11 @@ int _niceInterval(int raw) {
   return 10 * scale;
 }
 
-YAxisResult computeYAxis5Ticks(List<FlSpot> spots,
-    {int defaultMin = 0, int defaultMax = 10}) {
+YAxisResult computeYAxis5Ticks(
+  List<FlSpot> spots, {
+  int defaultMin = 0,
+  int defaultMax = 10,
+}) {
   if (spots.isEmpty) {
     return YAxisResult(defaultMin, defaultMax, (defaultMax - defaultMin) ~/ 4);
   }
@@ -270,10 +273,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                   child: TabBarView(
                     controller: _tabController,
                     children: _isNitrogen
-                        ? [
-                            _buildOverviewTab(),
-                            _buildMaintenanceTab(),
-                          ]
+                        ? [_buildOverviewTab(), _buildMaintenanceTab()]
                         : [
                             _buildOverviewTab(),
                             _buildEnergyDataTab(),
@@ -374,7 +374,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                           ? (_productDetail!.nitrogenFlow ?? 0).toDouble()
                           : (_productDetail!.temperature ?? 0).toDouble(),
                       pressure: _isNitrogen
-                          ? (_productDetail!.nitrogenPressure ?? _productDetail!.pressure ?? 0).toDouble()
+                          ? (_productDetail!.nitrogenPressure ??
+                                    _productDetail!.pressure ??
+                                    0)
+                                .toDouble()
                           : (_productDetail!.pressure ?? 0).toDouble(),
                       power: _isNitrogen
                           ? (_productDetail!.nitrogenPurity ?? 0).toDouble()
@@ -393,7 +396,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 right: 24.w,
                 top: (tempCornerY - 25).clamp(8.0, double.infinity),
                 child: _buildDataPointOverlay(
-                  icon: Symbols.device_thermostat,
+                  icon: _isNitrogen ? Symbols.air : Symbols.device_thermostat,
                   label: _isNitrogen ? 'N2 Flow' : 'Temperature',
                   value: _isNitrogen
                       ? '${(_productDetail!.nitrogenFlow ?? 0).toStringAsFixed(0)} Nm3/hr'
@@ -407,10 +410,12 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 left: 24.w,
                 bottom: 8.h,
                 child: _buildDataPointOverlay(
-                  icon: Symbols.battery_charging_90,
+                  icon: _isNitrogen
+                      ? Symbols.water_drop
+                      : Symbols.battery_charging_90,
                   label: _isNitrogen ? 'Purity' : 'Power',
                   value: _isNitrogen
-                      ? '${(_productDetail!.nitrogenPurity ?? 0).toStringAsFixed(0)} %'
+                      ? '${(((_productDetail!.nitrogenPurity ?? 0).toDouble() * 100).truncate() / 100).toStringAsFixed(2)} %'
                       : '${(_productDetail!.power ?? 0).toStringAsFixed(0)} kw',
                   labelColor: _productDetail!.status.toLowerCase() == 'error'
                       ? AppColors.danger
@@ -510,8 +515,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                       _buildMetricCard(
                         'Purity',
                         '',
-                        '${(_productDetail!.nitrogenPurity ?? 0).toStringAsFixed(0)}',
-                        icon: Symbols.play_circle,
+                        '${(((_productDetail!.nitrogenPurity ?? 0).toDouble() * 100).truncate() / 100).toStringAsFixed(2)}',
+                        icon: Symbols.water_drop,
                         iconColor: _statusColor,
                       ),
                       SizedBox(height: 10.h),
@@ -519,7 +524,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                         'Pressure',
                         '',
                         '${(_productDetail!.nitrogenPressure ?? _productDetail!.pressure ?? 0).toStringAsFixed(0)}',
-                        icon: Symbols.timer,
+                        icon: Symbols.avg_pace,
                         iconColor: _statusColor,
                       ),
                     ]
@@ -764,8 +769,11 @@ class _ProductDetailPageState extends State<ProductDetailPage>
               final spots = overviewData.systemPressure
                   .map((p) => FlSpot(p.x, p.y))
                   .toList();
-              final axis = computeYAxis5Ticks(spots,
-                  defaultMin: 0, defaultMax: 10);
+              final axis = computeYAxis5Ticks(
+                spots,
+                defaultMin: 0,
+                defaultMax: 10,
+              );
               return _buildLineChart(
                 title: 'System Pressure (Last 6 Hours)',
                 spots: spots,
@@ -782,8 +790,11 @@ class _ProductDetailPageState extends State<ProductDetailPage>
               final spots = overviewData.systemTemperature
                   .map((p) => FlSpot(p.x, p.y))
                   .toList();
-              final axis = computeYAxis5Ticks(spots,
-                  defaultMin: 0, defaultMax: 120);
+              final axis = computeYAxis5Ticks(
+                spots,
+                defaultMin: 0,
+                defaultMax: 120,
+              );
               return _buildLineChart(
                 title: 'System Temperature (°C) (Last 6 Hours)',
                 spots: spots,
@@ -800,8 +811,11 @@ class _ProductDetailPageState extends State<ProductDetailPage>
               final spots = overviewData.mainCurrent
                   .map((p) => FlSpot(p.x, p.y))
                   .toList();
-              final axis = computeYAxis5Ticks(spots,
-                  defaultMin: 0, defaultMax: 100);
+              final axis = computeYAxis5Ticks(
+                spots,
+                defaultMin: 0,
+                defaultMax: 100,
+              );
               return _buildLineChart(
                 title: 'Main Current (A)',
                 spots: spots,
@@ -815,10 +829,14 @@ class _ProductDetailPageState extends State<ProductDetailPage>
           ],
           if (overviewData.power.isNotEmpty)
             () {
-              final spots =
-                  overviewData.power.map((p) => FlSpot(p.x, p.y)).toList();
-              final axis = computeYAxis5Ticks(spots,
-                  defaultMin: 0, defaultMax: 100);
+              final spots = overviewData.power
+                  .map((p) => FlSpot(p.x, p.y))
+                  .toList();
+              final axis = computeYAxis5Ticks(
+                spots,
+                defaultMin: 0,
+                defaultMax: 100,
+              );
               return _buildLineChart(
                 title: 'Power (kw)',
                 spots: spots,
@@ -869,12 +887,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     required Color color,
     required double interval,
   }) {
-    final minX = spots.isEmpty
-        ? 0.0
-        : spots.map((s) => s.x).reduce(math.min);
-    final maxX = spots.isEmpty
-        ? 5.0
-        : spots.map((s) => s.x).reduce(math.max);
+    final minX = spots.isEmpty ? 0.0 : spots.map((s) => s.x).reduce(math.min);
+    final maxX = spots.isEmpty ? 5.0 : spots.map((s) => s.x).reduce(math.max);
     // แกน X แสดงป้ายทุกครึ่งชม. เริ่มจากเวลาแรกของข้อมูล (เช่น 10:00 → 10:30 → 11:00)
     const halfHourMs = 1800000.0; // 30 นาที
 
@@ -1359,7 +1373,7 @@ class _AnimatedLinePainter extends CustomPainter {
     final tempCornerX = tempStartX + vDist * math.tan(angle);
     final tempCornerY = tempStartY - vDist;
     final tempLabelX = size.width - 30.0;
-    final tempEndX = tempLabelX - tempTp.width - 40;
+    final tempEndX = tempLabelX - tempTp.width - (topLabelText == 'N2 Flow' ? 80 : 40);
     final tempEndY = tempCornerY;
     final tempPath = Path()
       ..moveTo(tempStartX, tempStartY)

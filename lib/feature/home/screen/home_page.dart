@@ -560,7 +560,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                             ],
                             AppText(
                               product.nitrogenPurity != null
-                                  ? '${product.nitrogenPurity!.toStringAsFixed(0)} %'
+                                  ? '${(((product.nitrogenPurity!.toDouble()) * 100).truncate() / 100).toStringAsFixed(2)} %'
                                   : '_ _ %',
                               style: TextStyle(
                                 fontSize: 14.sp,

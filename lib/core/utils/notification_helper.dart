@@ -108,14 +108,23 @@ class NotificationHelper {
   /// ==================== Permission Management ====================
 
   /// ขอ permission สำหรับ notifications
+  /// ใช้ FirebaseMessaging.requestPermission() โดยตรงเพื่อให้ iOS แสดง dialog ได้ถูกต้อง
   static Future<bool> _requestPermissions() async {
     try {
-      final status = await PermissionHelper.requestNotificationPermission();
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
-      debugPrint('📱 Notification Permission Status: $status');
+      debugPrint(
+        '📱 Notification Permission Status: ${settings.authorizationStatus}',
+      );
 
-      return status == handler.PermissionStatus.granted ||
-          status == handler.PermissionStatus.provisional;
+      return settings.authorizationStatus ==
+              AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
     } catch (e) {
       debugPrint('❌ Error requesting notification permission: $e');
       return false;
@@ -124,7 +133,9 @@ class NotificationHelper {
 
   /// ตรวจสอบสถานะ notification permission ปัจจุบัน
   static Future<bool> hasPermission() async {
-    return await PermissionHelper.hasNotificationPermission();
+    final settings = await _messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
   /// ขอ permission สำหรับ Exact Alarms (Android 14+)
