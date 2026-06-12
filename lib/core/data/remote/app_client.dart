@@ -46,91 +46,94 @@ abstract class AppClient {
 
   /// API fetch notifications (article + alert list) by member_id
   @GET('/members/{member_id}/notifications')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchNotificationsByMember(
+  Future<HttpResponse<dynamic>> fetchNotificationsByMember(
     @Path('member_id') String memberId,
   );
 
   /// API fetch alert detail by id
   @GET('/alert/{id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchAlertDetail(
+  Future<HttpResponse<dynamic>> fetchAlertDetail(
     @Path('id') String id,
   );
 
   /// API fetch general notification detail by id
   @GET('/notifications/{id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchNotificationDetail(
+  Future<HttpResponse<dynamic>> fetchNotificationDetail(
     @Path('id') String id,
   );
 
   /// API fetch service jobs by member_id (user id หลัง login)
   @GET('/members/{member_id}/service-jobs')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobsByMember(
+  Future<HttpResponse<dynamic>> fetchServiceJobsByMember(
     @Path('member_id') String memberId,
   );
 
   /// API fetch service job detail by service id
   @GET('/service-job/{service_id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchServiceJobDetail(
+  Future<HttpResponse<dynamic>> fetchServiceJobDetail(
     @Path('service_id') String serviceId,
   );
 
   /// API fetch products by member_id (user id หลัง login)
   @GET('/members/{member_id}/products')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchProductsByMember(
+  Future<HttpResponse<dynamic>> fetchProductsByMember(
     @Path('member_id') String memberId,
   );
 
-  /// API fetch product detail by product id (optional interval for graph, default 10)
+  /// API fetch product detail by product id
+  /// [scope]: full (default) | live | graph
+  /// [interval]: graph bucket size in minutes (default 30)
   @GET('/product/{product_id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchProductDetail(
+  Future<HttpResponse<dynamic>> fetchProductDetail(
     @Path('product_id') String productId,
+    @Query('scope') String? scope,
     @Query('interval') int? interval,
   );
 
   /// API fetch article highlight (carousel)
   @GET('/article-highlight')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleHighlight();
+  Future<HttpResponse<dynamic>> fetchArticleHighlight();
 
   /// API fetch article list
   @GET('/article')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleList();
+  Future<HttpResponse<dynamic>> fetchArticleList();
 
   /// API fetch articles list (alias)
   @GET('/articles')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchArticles();
+  Future<HttpResponse<dynamic>> fetchArticles();
 
   /// API fetch article detail by id
   @GET('/article/{id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleDetail(
+  Future<HttpResponse<dynamic>> fetchArticleDetail(
     @Path('id') String id,
   );
 
   /// API fetch related articles (keep reading)
   @GET('/article-keepreading/{id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchArticleKeepReading(
+  Future<HttpResponse<dynamic>> fetchArticleKeepReading(
     @Path('id') String id,
   );
 
   /// API fetch contact us by member_id (https://services.delta-compressor.co.th/contact-us/{member_id})
   @GET('/contact-us/{member_id}')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchContactUs(
+  Future<HttpResponse<dynamic>> fetchContactUs(
     @Path('member_id') String memberId,
   );
 
   /// API fetch active background
   @GET('/active-background')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchActiveBackground();
+  Future<HttpResponse<dynamic>> fetchActiveBackground();
 
   /// API forgot password
   @POST('/forgetpsw')
-  Future<HttpResponse<Map<String, dynamic>>> forgetPassword(
+  Future<HttpResponse<dynamic>> forgetPassword(
     @Body() Map<String, dynamic> body,
   );
 
   /// API ส่ง device token สำหรับ push notification (Firebase)
   /// เรียกหลัง login เพื่อให้ backend ส่ง push ได้
   @POST('/device/token')
-  Future<HttpResponse<Map<String, dynamic>>> storeDeviceToken(
+  Future<HttpResponse<dynamic>> storeDeviceToken(
     @Body() Map<String, dynamic> body,
   );
 }

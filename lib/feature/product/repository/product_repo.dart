@@ -4,14 +4,26 @@ import 'package:delta_compressor_202501017/feature/product/models/product_detail
 import 'package:dio/dio.dart';
 
 mixin ProductDataSource {
-  Future<RepoResult<ProductDetail>> fetchProductDetail(String productId);
+  Future<RepoResult<ProductDetail>> fetchProductDetail(
+    String productId, {
+    ProductDetailScope scope = ProductDetailScope.full,
+    int? interval,
+  });
 }
 
 class ProductRepo extends AppRepository with ProductDataSource {
   @override
-  Future<RepoResult<ProductDetail>> fetchProductDetail(String productId) async {
+  Future<RepoResult<ProductDetail>> fetchProductDetail(
+    String productId, {
+    ProductDetailScope scope = ProductDetailScope.full,
+    int? interval,
+  }) async {
     try {
-      final response = await requireRemote.fetchProductDetail(productId, null);
+      final response = await requireRemote.fetchProductDetail(
+        productId,
+        scope == ProductDetailScope.full ? null : scope.value,
+        interval,
+      );
       final body = response.data;
       if (body == null) {
         return RepoResult.error(
@@ -26,7 +38,9 @@ class ProductRepo extends AppRepository with ProductDataSource {
         );
       }
       final data = body['data'] as Map<String, dynamic>;
-      final detail = ProductDetail.fromJson(data);
+      final detail = scope == ProductDetailScope.full
+          ? ProductDetail.fromJson(data)
+          : ProductDetail.fromPartialJson(data, scope: scope);
       return RepoResult.success(data: detail);
     } on DioException catch (e) {
       final message = e.response?.data is Map

@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "Flutter App",
+      "path": "."
+    },
+    {
+      "name": "Delta Services API",
+      "path": "/Applications/XAMPP/xamppfiles/htdocs/Delta_services"
+    }
+  ],
+  "settings": {
+    "intelephense.environment.phpVersion": "8.2.0",
+    "intelephense.files.exclude": [
+      "**/.git/**",
+      "**/node_modules/**",
+      "**/vendor/**/{Tests,tests}/**"
+    ]
+  }
+}

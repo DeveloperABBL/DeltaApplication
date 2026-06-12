@@ -18,6 +18,16 @@ int? _toInt(dynamic v) {
   return d?.toInt();
 }
 
+/// API scope for GET /product/{id}
+enum ProductDetailScope {
+  full('full'),
+  live('live'),
+  graph('graph');
+
+  const ProductDetailScope(this.value);
+  final String value;
+}
+
 /// Response from GET /product/{product_id}
 /// success, data structure per API
 class ProductDetail {
@@ -65,36 +75,85 @@ class ProductDetail {
   });
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) {
+    return ProductDetail._fromJsonMap(json, isPartial: false);
+  }
+
+  /// Parse partial API response for [scope=live] or [scope=graph].
+  factory ProductDetail.fromPartialJson(
+    Map<String, dynamic> json, {
+    required ProductDetailScope scope,
+  }) {
+    return ProductDetail._fromJsonMap(json, isPartial: true);
+  }
+
+  factory ProductDetail._fromJsonMap(
+    Map<String, dynamic> json, {
+    required bool isPartial,
+  }) {
     final current = json['current'] is Map
         ? Map<String, dynamic>.from(json['current'] as Map)
         : null;
     return ProductDetail(
       id: (json['id'] ?? '').toString(),
-      serialNo: (json['serial_no'] ?? '').toString(),
-      model: (json['model'] ?? '').toString(),
-      productType: (json['product_type'] ?? 'AIR COMPRESSOR').toString(),
-      status: (json['status'] ?? 'Offline').toString(),
+      serialNo: isPartial ? '' : (json['serial_no'] ?? '').toString(),
+      model: isPartial ? '' : (json['model'] ?? '').toString(),
+      productType: isPartial
+          ? ''
+          : (json['product_type'] ?? 'AIR COMPRESSOR').toString(),
+      status: json.containsKey('status')
+          ? (json['status'] ?? 'Offline').toString()
+          : 'Offline',
       temperature: _toDouble(json['temperature'] ?? current?['temperature']),
-      pressure: _toDouble(json['pressure'] ?? json['air_pressure'] ?? current?['air_pressure']),
+      pressure: _toDouble(
+        json['pressure'] ?? json['air_pressure'] ?? current?['air_pressure'],
+      ),
       power: _toDouble(json['power'] ?? current?['motor_power']),
       runtime: _toInt(json['runtime'] ?? current?['runtime']),
       loadTime: _toInt(json['load_time'] ?? current?['load_time']),
       nitrogenFlow: _toDouble(current?['nitrogen_flow']),
       nitrogenPurity: _toDouble(current?['nitrogen_purity']),
       nitrogenPressure: _toDouble(current?['nitrogen_pressure']),
-      image: json['image']?.toString(),
-      productBackground: json['product_background']?.toString(),
+      image: isPartial ? null : json['image']?.toString(),
+      productBackground:
+          isPartial ? null : json['product_background']?.toString(),
       energyData: json['energy_data'] != null
           ? EnergyData.fromJson(
               Map<String, dynamic>.from(json['energy_data'] as Map))
           : null,
-      overviewData: _parseOverviewData(json['overview_data']),
+      overviewData: json.containsKey('overview_data')
+          ? _parseOverviewData(json['overview_data'])
+          : null,
       maintenanceItems: json['maintenance_items'] != null
           ? (json['maintenance_items'] as List)
               .map((e) => MaintenanceItem.fromJson(
                   Map<String, dynamic>.from(e as Map)))
               .toList()
           : null,
+    );
+  }
+
+  ProductDetail merge(ProductDetail partial) {
+    final current = partial;
+    return ProductDetail(
+      id: id.isNotEmpty ? id : current.id,
+      serialNo: current.serialNo.isNotEmpty ? current.serialNo : serialNo,
+      model: current.model.isNotEmpty ? current.model : model,
+      productType:
+          current.productType.isNotEmpty ? current.productType : productType,
+      status: current.status.isNotEmpty ? current.status : status,
+      temperature: current.temperature ?? temperature,
+      pressure: current.pressure ?? pressure,
+      power: current.power ?? power,
+      runtime: current.runtime ?? runtime,
+      loadTime: current.loadTime ?? loadTime,
+      nitrogenFlow: current.nitrogenFlow ?? nitrogenFlow,
+      nitrogenPurity: current.nitrogenPurity ?? nitrogenPurity,
+      nitrogenPressure: current.nitrogenPressure ?? nitrogenPressure,
+      image: current.image ?? image,
+      productBackground: current.productBackground ?? productBackground,
+      energyData: current.energyData ?? energyData,
+      overviewData: current.overviewData ?? overviewData,
+      maintenanceItems: current.maintenanceItems ?? maintenanceItems,
     );
   }
 

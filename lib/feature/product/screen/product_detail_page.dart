@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
@@ -82,18 +83,27 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const _liveRefreshInterval = Duration(seconds: 10);
+  static const _graphRefreshInterval = Duration(minutes: 5);
+  static const _graphIntervalMinutes = 10;
+
   late TabController _tabController;
   late AnimationController _lineAnimationController;
   late Animation<double> _lineAnimation;
   ProductDetail? _productDetail;
-  bool _isLoading = true;
+  bool _isInitialLoading = true;
   String? _errorMessage;
   final ProductRepo _repo = ProductRepo();
+  Timer? _liveRefreshTimer;
+  Timer? _graphRefreshTimer;
+  bool _isFetchingLive = false;
+  bool _isFetchingGraph = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 3, vsync: this);
     _lineAnimationController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -102,35 +112,184 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     _lineAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _lineAnimationController, curve: Curves.linear),
     );
-    _loadProductDetail();
+    _loadFull(silent: false);
+    _startRefreshTimers();
+  }
+
+  void _startRefreshTimers() {
+    _liveRefreshTimer?.cancel();
+    _graphRefreshTimer?.cancel();
+    _liveRefreshTimer = Timer.periodic(_liveRefreshInterval, (_) {
+      _refreshLive(silent: true);
+    });
+    _graphRefreshTimer = Timer.periodic(_graphRefreshInterval, (_) {
+      _refreshGraph(silent: true);
+    });
+  }
+
+  void _stopRefreshTimers() {
+    _liveRefreshTimer?.cancel();
+    _liveRefreshTimer = null;
+    _graphRefreshTimer?.cancel();
+    _graphRefreshTimer = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshLive(silent: true);
+      _startRefreshTimers();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _stopRefreshTimers();
+    }
   }
 
   bool get _isNitrogen =>
       _productDetail?.productType.toLowerCase() == 'nitrogen';
 
-  Future<void> _loadProductDetail() async {
-    final result = await _repo.fetchProductDetail(widget.productId);
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
+  void _logRefresh(String scope, String message) {
+    // debugPrint('[ProductDetail][$scope] $message (productId: ${widget.productId})');
+  }
+
+  Future<void> _loadFull({required bool silent}) async {
+    if (_isFetchingLive || _isFetchingGraph) {
+      _logRefresh('full', 'skipped — fetch already in progress');
+      return;
+    }
+    _isFetchingLive = true;
+    _isFetchingGraph = true;
+    final stopwatch = Stopwatch()..start();
+    _logRefresh('full', 'start');
+    try {
+      final result = await _repo.fetchProductDetail(
+        widget.productId,
+        scope: ProductDetailScope.full,
+        interval: _graphIntervalMinutes,
+      );
+      if (!mounted) return;
+      stopwatch.stop();
       if (result.isSuccess) {
-        _productDetail = result.data;
-        _errorMessage = null;
-        if (_isNitrogen && _tabController.length != 2) {
-          _tabController.dispose();
-          _tabController = TabController(length: 2, vsync: this);
-        }
+        _logRefresh(
+          'full',
+          'done ${stopwatch.elapsedMilliseconds}ms — status: ${result.data?.status}',
+        );
       } else {
-        _productDetail = null;
-        _errorMessage = result.hasError
-            ? result.error.toString().replaceFirst('Exception: ', '')
-            : 'ไม่พบข้อมูล';
+        _logRefresh(
+          'full',
+          'failed ${stopwatch.elapsedMilliseconds}ms — ${result.error}',
+        );
       }
-    });
+      setState(() {
+        _isInitialLoading = false;
+        if (result.isSuccess) {
+          _productDetail = result.data;
+          _errorMessage = null;
+          if (_isNitrogen && _tabController.length != 2) {
+            _tabController.dispose();
+            _tabController = TabController(length: 2, vsync: this);
+          }
+        } else if (!silent) {
+          _productDetail = null;
+          _errorMessage = result.hasError
+              ? result.error.toString().replaceFirst('Exception: ', '')
+              : 'ไม่พบข้อมูล';
+        }
+      });
+    } finally {
+      _isFetchingLive = false;
+      _isFetchingGraph = false;
+    }
+  }
+
+  Future<void> _refreshLive({required bool silent}) async {
+    final current = _productDetail;
+    if (_isFetchingLive) {
+      _logRefresh('live', 'skipped — fetch already in progress');
+      return;
+    }
+    if (current == null) {
+      _logRefresh('live', 'skipped — no cached data yet');
+      return;
+    }
+    _isFetchingLive = true;
+    final stopwatch = Stopwatch()..start();
+    _logRefresh('live', 'start');
+    try {
+      final result = await _repo.fetchProductDetail(
+        widget.productId,
+        scope: ProductDetailScope.live,
+      );
+      final data = result.data;
+      if (!mounted) return;
+      stopwatch.stop();
+      if (!result.isSuccess || data == null) {
+        _logRefresh(
+          'live',
+          'failed ${stopwatch.elapsedMilliseconds}ms — ${result.error}',
+        );
+        return;
+      }
+      _logRefresh(
+        'live',
+        'done ${stopwatch.elapsedMilliseconds}ms — status: ${data.status}',
+      );
+      setState(() {
+        _productDetail = current.merge(data);
+      });
+    } finally {
+      _isFetchingLive = false;
+    }
+  }
+
+  Future<void> _refreshGraph({required bool silent}) async {
+    final current = _productDetail;
+    if (_isFetchingGraph) {
+      _logRefresh('graph', 'skipped — fetch already in progress');
+      return;
+    }
+    if (current == null) {
+      _logRefresh('graph', 'skipped — no cached data yet');
+      return;
+    }
+    _isFetchingGraph = true;
+    final stopwatch = Stopwatch()..start();
+    _logRefresh('graph', 'start');
+    try {
+      final result = await _repo.fetchProductDetail(
+        widget.productId,
+        scope: ProductDetailScope.graph,
+        interval: _graphIntervalMinutes,
+      );
+      final data = result.data;
+      if (!mounted) return;
+      stopwatch.stop();
+      if (!result.isSuccess || data == null) {
+        _logRefresh(
+          'graph',
+          'failed ${stopwatch.elapsedMilliseconds}ms — ${result.error}',
+        );
+        return;
+      }
+      final pointCount = data.overviewData?.systemPressure.length ??
+          data.overviewData?.nitrogenPressure?.length ??
+          0;
+      _logRefresh(
+        'graph',
+        'done ${stopwatch.elapsedMilliseconds}ms — points: $pointCount',
+      );
+      setState(() {
+        _productDetail = current.merge(data);
+      });
+    } finally {
+      _isFetchingGraph = false;
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopRefreshTimers();
     _tabController.dispose();
     _lineAnimationController.dispose();
     super.dispose();
@@ -141,7 +300,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     return Scaffold(
       backgroundColor: AppColors.black,
       body: SafeArea(
-        child: _isLoading
+        child: _isInitialLoading
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.light),
               )
