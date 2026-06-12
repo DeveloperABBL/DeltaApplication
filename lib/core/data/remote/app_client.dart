@@ -44,9 +44,23 @@ abstract class AppClient {
   @POST('/app-login')
   Future<HttpResponse<LoginResponse>> appLogin(@Body() LoginRequest request);
 
-  /// API fetch notifications (article + alert list)
-  @GET('/notifications')
-  Future<HttpResponse<Map<String, dynamic>?>> fetchNotifications();
+  /// API fetch notifications (article + alert list) by member_id
+  @GET('/members/{member_id}/notifications')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchNotificationsByMember(
+    @Path('member_id') String memberId,
+  );
+
+  /// API fetch alert detail by id
+  @GET('/alert/{id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchAlertDetail(
+    @Path('id') String id,
+  );
+
+  /// API fetch general notification detail by id
+  @GET('/notifications/{id}')
+  Future<HttpResponse<Map<String, dynamic>?>> fetchNotificationDetail(
+    @Path('id') String id,
+  );
 
   /// API fetch service jobs by member_id (user id หลัง login)
   @GET('/members/{member_id}/service-jobs')

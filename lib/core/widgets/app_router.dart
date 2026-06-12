@@ -3,6 +3,8 @@ import 'package:delta_compressor_202501017/feature/authentication/screen/forgot_
 import 'package:delta_compressor_202501017/feature/authentication/screen/login_page.dart';
 import 'package:delta_compressor_202501017/feature/first_loading/screen/first_loading_page.dart';
 import 'package:delta_compressor_202501017/feature/main_shell/screen/main_shell_page.dart';
+import 'package:delta_compressor_202501017/feature/notification/screen/alert_detail_page.dart';
+import 'package:delta_compressor_202501017/feature/notification/screen/general_notification_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
 import 'package:delta_compressor_202501017/feature/onboarding/screen/onboarding_page.dart';
 import 'package:delta_compressor_202501017/feature/product/screen/product_detail_page.dart';
@@ -75,6 +77,25 @@ class AppRouter {
           final articleId =
               state.pathParameters['articleId'] ?? '';
           return ArticleDetailPage(articleId: articleId);
+        },
+      ),
+      GoRoute(
+        path: '${AlertDetailPage.pagePath}/:alertId',
+        name: AlertDetailPage.pageName,
+        builder: (context, state) {
+          final alertId = state.pathParameters['alertId'] ?? '';
+          return AlertDetailPage(alertId: alertId);
+        },
+      ),
+      GoRoute(
+        path: '${GeneralNotificationDetailPage.pagePath}/:notificationId',
+        name: GeneralNotificationDetailPage.pageName,
+        builder: (context, state) {
+          final notificationId =
+              state.pathParameters['notificationId'] ?? '';
+          return GeneralNotificationDetailPage(
+            notificationId: notificationId,
+          );
         },
       ),
     ],

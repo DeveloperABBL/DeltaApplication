@@ -1,11 +1,15 @@
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
+import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/models/notification_model.dart';
 import 'package:delta_compressor_202501017/feature/notification/repository/notification_repo.dart';
+import 'package:delta_compressor_202501017/feature/notification/screen/alert_detail_page.dart';
+import 'package:delta_compressor_202501017/feature/notification/screen/general_notification_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/viewmodel/notification_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -207,8 +211,17 @@ class _NotificationWidgetState extends State<NotificationWidget> {
       if (article != null) return _buildArticleCard(context, article);
       return _buildInvalidCard('Article notification data is missing');
     }
+    if (item.type == 'general') {
+      final general = item.general;
+      if (general != null) {
+        return _buildGeneralCard(context, item.id, general);
+      }
+      return _buildInvalidCard('General notification data is missing');
+    }
     final alert = item.alert;
-    if (alert != null) return _buildAlertCard(alert);
+    if (alert != null) {
+      return _buildAlertCard(context, item.id, alert);
+    }
     return _buildInvalidCard('Alert notification data is missing');
   }
 
@@ -236,12 +249,25 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     );
   }
 
+  void _openAlert(BuildContext context, String notificationId, AlertNotification alert) {
+    final alertId = alert.id.isNotEmpty ? alert.id : notificationId;
+    if (alertId.isEmpty) return;
+    context.push(AlertDetailPage.pathFor(alertId));
+  }
+
+  void _openGeneral(BuildContext context, String notificationId) {
+    if (notificationId.isEmpty) return;
+    context.push(GeneralNotificationDetailPage.pathFor(notificationId));
+  }
+
+  void _openArticle(BuildContext context, ArticleNotification article) {
+    if (article.id.isEmpty) return;
+    context.push(ArticleDetailPage.pathFor(article.id));
+  }
+
   Widget _buildArticleCard(BuildContext context, ArticleNotification article) {
     return GestureDetector(
-      onTap: () {
-        // TODO: Navigate to article detail when route is available
-        // e.g. context.push('/article/${article.id}');
-      },
+      onTap: () => _openArticle(context, article),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),
@@ -287,9 +313,7 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                   ),
                   SizedBox(height: 4.h),
                   GestureDetector(
-                    onTap: () {
-                      // TODO: Navigate to article detail
-                    },
+                    onTap: () => _openArticle(context, article),
                     child: AppText(
                       'อ่านเพิ่มเติม',
                       style: TextStyle(
@@ -351,82 +375,215 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     );
   }
 
-  Widget _buildAlertCard(AlertNotification alert) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.softDark,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Symbols.warning, color: AppColors.danger, size: 24.sp),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: AppText(
-                  alert.title,
+  Widget _buildAlertCard(
+    BuildContext context,
+    String notificationId,
+    AlertNotification alert,
+  ) {
+    return GestureDetector(
+      onTap: () => _openAlert(context, notificationId, alert),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.softDark,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Symbols.warning, color: AppColors.danger, size: 24.sp),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: AppText(
+                    alert.title,
+                    style: TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            AppText(
+              'SERIAL NO : ${alert.serialNo}',
+              style: TextStyle(
+                color: AppColors.light,
+                fontSize: 16.sp,
+                height: 1,
+              ),
+            ),
+            AppText(
+              'MODEL : ${alert.model}',
+              style: TextStyle(
+                color: AppColors.light,
+                fontSize: 16.sp,
+                height: 1,
+              ),
+            ),
+            AppText(
+              alert.summary,
+              style: TextStyle(
+                color: AppColors.light,
+                fontSize: 16.sp,
+                height: 1,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 4.h),
+            AppText(
+              'ดูรายละเอียด',
+              style: TextStyle(
+                color: AppColors.warning,
+                fontSize: 18.sp,
+                height: 1,
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.warning,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              children: [
+                Icon(Symbols.access_time, color: AppColors.light, size: 18.sp),
+                SizedBox(width: 4.w),
+                AppText(
+                  alert.alertDatetime,
                   style: TextStyle(
-                    color: AppColors.danger,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
+                    color: AppColors.light,
+                    fontSize: 18.sp,
                     height: 1,
                   ),
                 ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneralCard(
+    BuildContext context,
+    String notificationId,
+    GeneralNotification general,
+  ) {
+    return GestureDetector(
+      onTap: () => _openGeneral(context, notificationId),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.softDark,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    general.title,
+                    style: TextStyle(
+                      color: AppColors.light,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 8.h),
+                  AppText(
+                    general.detail,
+                    style: TextStyle(
+                      color: AppColors.light,
+                      fontSize: 18.sp,
+                      height: 1,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  AppText(
+                    'ดูรายละเอียด',
+                    style: TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 18.sp,
+                      height: 1,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.warning,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Icon(
+                        Symbols.access_time,
+                        color: AppColors.light,
+                        size: 18.sp,
+                      ),
+                      SizedBox(width: 4.w),
+                      AppText(
+                        general.datetime,
+                        style: TextStyle(
+                          color: AppColors.light,
+                          fontSize: 18.sp,
+                          height: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          AppText(
-            'SERIAL NO : ${alert.serialNo}',
-            style: TextStyle(
-              color: AppColors.light,
-              fontSize: 16.sp,
-              height: 1,
             ),
-          ),
-          AppText(
-            'MODEL : ${alert.model}',
-            style: TextStyle(
-              color: AppColors.light,
-              fontSize: 16.sp,
-              height: 1,
-            ),
-          ),
-          AppText(
-            'Fault : ${alert.fault}',
-            style: TextStyle(
-              color: AppColors.light,
-              fontSize: 16.sp,
-              height: 1,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            children: [
-              Icon(Symbols.access_time, color: AppColors.light, size: 18.sp),
-              SizedBox(width: 4.w),
-              AppText(
-                alert.alertDatetime,
-                style: TextStyle(
-                  color: AppColors.light,
-                  fontSize: 18.sp,
-                  height: 1,
+            if (general.image.isNotEmpty) ...[
+              SizedBox(width: 16.w),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.r),
+                child: Image.network(
+                  general.image,
+                  width: 100.w,
+                  height: 100.w,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 100.w,
+                      height: 100.w,
+                      color: AppColors.dark,
+                      child: Icon(
+                        Symbols.broken_image,
+                        color: AppColors.light,
+                        size: 40.sp,
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
