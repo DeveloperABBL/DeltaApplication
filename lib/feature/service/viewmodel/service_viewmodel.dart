@@ -14,9 +14,11 @@ class ServiceViewModel extends AppViewModel {
   UiResult<ServiceData> _serviceData = UiResult.loading();
   UiResult<ServiceData> get serviceData => _serviceData;
 
-  Future<void> fetchServiceData() async {
-    _serviceData = UiResult.loading();
-    notifyListeners();
+  Future<void> fetchServiceData({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      _serviceData = UiResult.loading();
+      notifyListeners();
+    }
 
     try {
       final result = await serviceDataSource.fetchServiceData();

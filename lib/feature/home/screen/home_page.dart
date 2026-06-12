@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
+import 'package:delta_compressor_202501017/core/widgets/app_refresh_indicator.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/home/models/home_model.dart';
 import 'package:delta_compressor_202501017/feature/home/repository/home_repo.dart';
@@ -40,6 +43,9 @@ class HomeWidget extends StatefulWidget {
 
 class _HomeWidgetState extends State<HomeWidget> {
   late final HomeViewModel _viewModel;
+  Timer? _productRefreshTimer;
+
+  static const _productRefreshInterval = Duration(seconds: 10);
 
   @override
   void initState() {
@@ -49,8 +55,25 @@ class _HomeWidgetState extends State<HomeWidget> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _viewModel.fetchHomeData();
+      _startProductAutoRefresh();
     });
   }
+
+  void _startProductAutoRefresh() {
+    _productRefreshTimer?.cancel();
+    _productRefreshTimer = Timer.periodic(
+      _productRefreshInterval,
+      (_) => _viewModel.refreshProducts(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _productRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _onRefresh() => _viewModel.fetchHomeData(forceRefresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -74,58 +97,72 @@ class _HomeWidgetState extends State<HomeWidget> {
               }
 
               if (homeDataResult.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.danger,
+                return AppRefreshIndicator(
+                  onRefresh: _onRefresh,
+                  child: AppRefreshScrollView(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: AppColors.danger,
+                          ),
+                          const SizedBox(height: 16),
+                          AppText(
+                            'Error: ${homeDataResult.error}',
+                            style: const TextStyle(color: AppColors.light),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => _viewModel.fetchHomeData(),
+                            child: AppText('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      AppText(
-                        'Error: ${homeDataResult.error}',
-                        style: const TextStyle(color: AppColors.light),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => _viewModel.fetchHomeData(),
-                        child: AppText('Retry'),
-                      ),
-                    ],
+                    ),
                   ),
                 );
               }
 
               if (homeDataResult.isEmpty) {
-                return Center(
-                  child: AppText(
-                    'No data available',
-                    style: const TextStyle(color: AppColors.light),
+                return AppRefreshIndicator(
+                  onRefresh: _onRefresh,
+                  child: AppRefreshScrollView(
+                    child: Center(
+                      child: AppText(
+                        'No data available',
+                        style: const TextStyle(color: AppColors.light),
+                      ),
+                    ),
                   ),
                 );
               }
 
               final homeData = homeDataResult.requireData;
 
-              return NestedScrollView(
-                headerSliverBuilder:
-                    (BuildContext context, bool innerBoxIsScrolled) {
-                      return [
-                        // Section 1: Header (Customer Info + Bell Icon)
-                        SliverToBoxAdapter(
-                          child: _buildHeader(homeData.customer),
-                        ),
-                        // Section 2: News & Updates (Carousel)
-                        SliverToBoxAdapter(
-                          child: _buildNewsSection(homeData.articles),
-                        ),
-                        // Section 3: My Product Header
-                        SliverToBoxAdapter(child: _buildProductHeader()),
-                      ];
-                    },
-                body: _buildProductList(homeData.products),
+              return AppRefreshIndicator(
+                onRefresh: _onRefresh,
+                child: NestedScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  headerSliverBuilder:
+                      (BuildContext context, bool innerBoxIsScrolled) {
+                        return [
+                          // Section 1: Header (Customer Info + Bell Icon)
+                          SliverToBoxAdapter(
+                            child: _buildHeader(homeData.customer),
+                          ),
+                          // Section 2: News & Updates (Carousel)
+                          SliverToBoxAdapter(
+                            child: _buildNewsSection(homeData.articles),
+                          ),
+                          // Section 3: My Product Header
+                          SliverToBoxAdapter(child: _buildProductHeader()),
+                        ];
+                      },
+                  body: _buildProductList(homeData.products),
+                ),
               );
             },
           ),
@@ -381,6 +418,7 @@ class _HomeWidgetState extends State<HomeWidget> {
   // Section 3: My Product List
   Widget _buildProductList(List<ProductItem> products) {
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 100.h),
       itemCount: products.length,
       itemBuilder: (context, index) {

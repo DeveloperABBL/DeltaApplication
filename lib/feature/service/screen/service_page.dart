@@ -1,5 +1,6 @@
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
+import 'package:delta_compressor_202501017/core/widgets/app_refresh_indicator.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/main_shell/viewmodel/main_shell_viewmodel.dart';
 import 'package:delta_compressor_202501017/feature/notification/screen/notification_page.dart';
@@ -50,6 +51,8 @@ class _ServiceWidgetState extends State<ServiceWidget> {
       await _viewModel.fetchServiceData();
     });
   }
+
+  Future<void> _onRefresh() => _viewModel.fetchServiceData(forceRefresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -119,52 +122,66 @@ class _ServiceWidgetState extends State<ServiceWidget> {
                     }
 
                     if (result.hasError) {
-                      return _buildErrorWidget();
+                      return AppRefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: AppRefreshScrollView(
+                          child: _buildErrorWidget(),
+                        ),
+                      );
                     }
 
                     if (result.isEmpty ||
                         (result.hasData && result.requireData.items.isEmpty)) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Symbols.mobile_wrench,
-                              size: 64,
-                              color: AppColors.light,
+                      return AppRefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: AppRefreshScrollView(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Symbols.mobile_wrench,
+                                  size: 64,
+                                  color: AppColors.light,
+                                ),
+                                SizedBox(height: 16.h),
+                                AppText(
+                                  'Service',
+                                  style: TextStyle(
+                                    color: AppColors.light,
+                                    fontSize: 22.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                AppText(
+                                  'No service data yet',
+                                  style: TextStyle(
+                                    color: AppColors.light,
+                                    fontSize: 24.sp,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 16.h),
-                            AppText(
-                              'Service',
-                              style: TextStyle(
-                                color: AppColors.light,
-                                fontSize: 22.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            AppText(
-                              'No service data yet',
-                              style: TextStyle(
-                                color: AppColors.light,
-                                fontSize: 24.sp,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     }
 
                     final data = result.requireData;
-                    return ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 16.h,
+                    return AppRefreshIndicator(
+                      onRefresh: _onRefresh,
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        itemCount: data.items.length,
+                        itemBuilder: (context, index) {
+                          return _buildServiceCard(context, data.items[index]);
+                        },
                       ),
-                      itemCount: data.items.length,
-                      itemBuilder: (context, index) {
-                        return _buildServiceCard(context, data.items[index]);
-                      },
                     );
                   },
                 ),

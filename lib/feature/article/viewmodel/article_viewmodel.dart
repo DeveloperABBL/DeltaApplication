@@ -27,10 +27,12 @@ class ArticleViewModel extends AppViewModel {
     notifyListeners();
   }
 
-  Future<void> fetchArticleData() async {
-    _articleHighlightData = UiResult.loading();
-    _articleData = UiResult.loading();
-    notifyListeners();
+  Future<void> fetchArticleData({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      _articleHighlightData = UiResult.loading();
+      _articleData = UiResult.loading();
+      notifyListeners();
+    }
 
     try {
       final highlightResult =
@@ -65,7 +67,7 @@ class ArticleViewModel extends AppViewModel {
     }
   }
 
-  Future<void> fetchArticleList() async {
-    await fetchArticleData();
+  Future<void> fetchArticleList({bool forceRefresh = false}) async {
+    await fetchArticleData(forceRefresh: forceRefresh);
   }
 }

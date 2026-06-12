@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 /// Domain DataSource Mixin
 mixin HomeDataSource {
   Future<RepoResult<HomeData>> fetchHomeData();
+  Future<RepoResult<List<ProductItem>>> fetchProducts();
 }
 
 /// Implementation
@@ -30,8 +31,6 @@ class HomeRepo extends AppRepository with HomeDataSource {
     try {
       final appPreferences = AppPreferences();
       final customerData = appPreferences.getCustomerData();
-      final userData = appPreferences.getUserData();
-      final memberId = userData?.id.toString() ?? '0';
 
       final customerInfo = CustomerInfo(
         customerName: customerData?.customerName ?? 'Unknown Customer',
@@ -59,26 +58,12 @@ class HomeRepo extends AppRepository with HomeDataSource {
       }
 
       List<ProductItem> products = [];
-      try {
-        final response = await requireRemote.fetchProductsByMember(memberId);
-        final body = response.data;
-        if (body != null &&
-            body['success'] == true &&
-            body['data'] is List<dynamic>) {
-          final list = body['data'] as List<dynamic>;
-          products = list
-              .map((e) => ProductItem.fromJson(
-                  Map<String, dynamic>.from(e as Map<dynamic, dynamic>)))
-              .toList();
-        }
-      } on DioException catch (e) {
-        final message = e.response?.data is Map
-            ? (e.response!.data as Map)['message']?.toString()
-            : null;
-        return RepoResult.error(
-          error: Exception(
-              message ?? e.message ?? 'ไม่สามารถดึงข้อมูลสินค้าได้'),
-        );
+      final productsResult = await fetchProducts();
+      if (productsResult.isError) {
+        return RepoResult.error(error: productsResult.error);
+      }
+      if (productsResult.isSuccess) {
+        products = productsResult.data;
       }
 
       final homeData = HomeData(
@@ -90,6 +75,37 @@ class HomeRepo extends AppRepository with HomeDataSource {
       return RepoResult.success(data: homeData);
     } on DioException catch (e) {
       return RepoResult.error(error: e);
+    } on Exception catch (e) {
+      return RepoResult.error(error: e);
+    }
+  }
+
+  @override
+  Future<RepoResult<List<ProductItem>>> fetchProducts() async {
+    try {
+      final userData = AppPreferences().getUserData();
+      final memberId = userData?.id.toString() ?? '0';
+
+      final response = await requireRemote.fetchProductsByMember(memberId);
+      final body = response.data;
+      if (body != null &&
+          body['success'] == true &&
+          body['data'] is List<dynamic>) {
+        final list = body['data'] as List<dynamic>;
+        final products = list
+            .map((e) => ProductItem.fromJson(
+                Map<String, dynamic>.from(e as Map<dynamic, dynamic>)))
+            .toList();
+        return RepoResult.success(data: products);
+      }
+      return RepoResult.success(data: []);
+    } on DioException catch (e) {
+      final message = e.response?.data is Map
+          ? (e.response!.data as Map)['message']?.toString()
+          : null;
+      return RepoResult.error(
+        error: Exception(message ?? e.message ?? 'ไม่สามารถดึงข้อมูลสินค้าได้'),
+      );
     } on Exception catch (e) {
       return RepoResult.error(error: e);
     }

@@ -14,9 +14,11 @@ class NotificationViewModel extends AppViewModel {
   UiResult<NotificationData> _notificationData = UiResult.loading();
   UiResult<NotificationData> get notificationData => _notificationData;
 
-  Future<void> fetchNotifications() async {
-    _notificationData = UiResult.loading();
-    notifyListeners();
+  Future<void> fetchNotifications({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      _notificationData = UiResult.loading();
+      notifyListeners();
+    }
 
     try {
       final result = await notificationDataSource.fetchNotifications();

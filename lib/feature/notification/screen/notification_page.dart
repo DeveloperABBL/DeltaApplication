@@ -1,5 +1,6 @@
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
 import 'package:delta_compressor_202501017/core/utils/ui_result.dart';
+import 'package:delta_compressor_202501017/core/widgets/app_refresh_indicator.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
 import 'package:delta_compressor_202501017/feature/notification/models/notification_model.dart';
@@ -51,6 +52,9 @@ class _NotificationWidgetState extends State<NotificationWidget> {
       await _viewModel.fetchNotifications();
     });
   }
+
+  Future<void> _onRefresh() =>
+      _viewModel.fetchNotifications(forceRefresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -108,57 +112,71 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                         }
 
                         if (result.hasError) {
-                          return _buildErrorWidget();
+                          return AppRefreshIndicator(
+                            onRefresh: _onRefresh,
+                            child: AppRefreshScrollView(
+                              child: _buildErrorWidget(),
+                            ),
+                          );
                         }
 
                         if (result.isEmpty ||
                             (result.hasData &&
                                 result.requireData.items.isEmpty)) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Symbols.notifications,
-                                  size: 64,
-                                  color: AppColors.light,
-                                  fontWeight: FontWeight.bold,
+                          return AppRefreshIndicator(
+                            onRefresh: _onRefresh,
+                            child: AppRefreshScrollView(
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Symbols.notifications,
+                                      size: 64,
+                                      color: AppColors.light,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    SizedBox(height: 16.h),
+                                    AppText(
+                                      'Notification',
+                                      style: TextStyle(
+                                        color: AppColors.light,
+                                        fontSize: 22.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    AppText(
+                                      'No notifications yet',
+                                      style: TextStyle(
+                                        color: AppColors.light,
+                                        fontSize: 18.sp,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(height: 16.h),
-                                AppText(
-                                  'Notification',
-                                  style: TextStyle(
-                                    color: AppColors.light,
-                                    fontSize: 22.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                AppText(
-                                  'No notifications yet',
-                                  style: TextStyle(
-                                    color: AppColors.light,
-                                    fontSize: 18.sp,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           );
                         }
 
                         final data = result.requireData;
-                        return ListView.builder(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 16.h,
+                        return AppRefreshIndicator(
+                          onRefresh: _onRefresh,
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 16.h,
+                            ),
+                            itemCount: data.items.length,
+                            itemBuilder: (context, index) {
+                              return _buildNotificationCard(
+                                context,
+                                data.items[index],
+                              );
+                            },
                           ),
-                          itemCount: data.items.length,
-                          itemBuilder: (context, index) {
-                            return _buildNotificationCard(
-                              context,
-                              data.items[index],
-                            );
-                          },
                         );
                       },
                     ),

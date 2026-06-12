@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:delta_compressor_202501017/core/const/app_color.dart';
+import 'package:delta_compressor_202501017/core/widgets/app_refresh_indicator.dart';
 import 'package:delta_compressor_202501017/core/widgets/app_text.dart';
 import 'package:delta_compressor_202501017/feature/article/models/article_model.dart';
 import 'package:delta_compressor_202501017/feature/article/screen/article_detail_page.dart';
@@ -49,6 +50,8 @@ class _ArticleWidgetState extends State<ArticleWidget> {
       await _viewModel.fetchArticleList();
     });
   }
+
+  Future<void> _onRefresh() => _viewModel.fetchArticleList(forceRefresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +123,12 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                     }
 
                     if (articleResult.hasError) {
-                      return _buildErrorWidget();
+                      return AppRefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: AppRefreshScrollView(
+                          child: _buildErrorWidget(),
+                        ),
+                      );
                     }
 
                     final highlights = highlightResult.hasData
@@ -130,14 +138,18 @@ class _ArticleWidgetState extends State<ArticleWidget> {
                         ? articleResult.requireData.items
                         : <ArticleListItem>[];
 
-                    return CustomScrollView(
-                      slivers: [
-                        if (highlights.isNotEmpty)
-                          SliverToBoxAdapter(
-                            child: _buildSection2(context, highlights),
-                          ),
-                        _buildSection3(context, articles),
-                      ],
+                    return AppRefreshIndicator(
+                      onRefresh: _onRefresh,
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          if (highlights.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _buildSection2(context, highlights),
+                            ),
+                          _buildSection3(context, articles),
+                        ],
+                      ),
                     );
                   },
                 ),
