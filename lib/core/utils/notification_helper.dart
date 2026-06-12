@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart' as handler;
 
 import 'package:delta_compressor_202501017/core/utils/permission_helper.dart';
@@ -33,9 +37,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// // Initialize ใน main.dart
 /// await NotificationHelper.initialize();
 ///
-/// // Listen การ tap notification
+/// // Listen การ tap notification (FCM / เปิดจาก terminated) — message อาจ null ถ้าแตะ local notif
 /// NotificationHelper.onNotificationTap((message) {
-///   // Handle navigation
+///   context.go(NotificationPage.pagePath);
 /// });
 ///
 /// // Get FCM token
@@ -46,8 +50,14 @@ class NotificationHelper {
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  /// Callback เมื่อ user tap notification
-  static Function(RemoteMessage)? _onMessageTapped;
+  /// Callback เมื่อ user เปิดจาก push (RemoteMessage) หรือแตะ local notification ตอน foreground (null)
+  static void Function(RemoteMessage? message)? _onMessageTapped;
+
+  /// ข้อความล่าสุดที่โชว์เป็น local notification ตอน foreground (ใช้เมื่อแตะ local notif)
+  static RemoteMessage? _lastForegroundMessageForTap;
+
+  /// เปิดแอปจาก terminated ด้วย notification ก่อนลงทะเบียน callback — เก็บไว้แล้วส่งตอน [onNotificationTap]
+  static RemoteMessage? _pendingInitialOpenMessage;
 
   /// สถานะการ initialize
   static bool _initialized = false;
@@ -69,23 +79,34 @@ class NotificationHelper {
     }
 
     try {
-      // 1. Request permission (iOS)
+      // 1. Request permission
       final permissionGranted = await _requestPermissions();
       if (!permissionGranted) {
-        debugPrint('⚠️ Notification permission denied');
-        return false;
+        debugPrint(
+          '⚠️ Notification permission denied — foreground push may not show',
+        );
       }
 
-      // 2. Initialize local notifications
+      // 2. Initialize local notifications (ใช้แสดงตอน foreground บน Android)
       await _initializeLocalNotifications();
 
-      // 3. Listen Token ของ FirebaseMessaging
+      // 3. iOS: ให้ระบบแสดง banner ตอนแอปเปิดอยู่ (FCM ไม่โชว์เองใน foreground)
+      if (platform_check.isIOS) {
+        await setForegroundNotificationPresentationOptions();
+      }
+
+      // 4. Android 13+: ขอ POST_NOTIFICATIONS (FCM requestPermission บน Android อาจไม่พอ)
+      if (platform_check.isAndroid) {
+        await PermissionHelper.requestNotificationPermission();
+      }
+
+      // 5. Listen Token ของ FirebaseMessaging
       _messaging.onTokenRefresh.listen(onTokenRefresh ?? (_) {});
 
-      // 4. Setup Firebase Messaging handlers
+      // 6. Setup Firebase Messaging handlers (ต้องลงทะเบียนเสมอ แม้ permission ถูกปฏิเสธ)
       await _setupMessageHandlers();
 
-      // 5. Setup background message handler
+      // 7. Setup background message handler
       FirebaseMessaging.onBackgroundMessage(
         firebaseMessagingBackgroundHandler,
       );
@@ -186,6 +207,7 @@ class NotificationHelper {
       initSettings,
       onDidReceiveNotificationResponse: (details) {
         debugPrint('📱 Local notification tapped: ${details.payload}');
+        _onMessageTapped?.call(_lastForegroundMessageForTap);
       },
     );
 
@@ -216,13 +238,22 @@ class NotificationHelper {
 
   static Future<void> _setupMessageHandlers() async {
     // 1. Foreground messages (เมื่อ app เปิดอยู่)
+    // iOS: ใช้ setForegroundNotificationPresentationOptions แสดง banner ระบบ
+    // Android: ต้องสร้าง local notification เอง (ระบบไม่โชว์ใน tray ตอน foreground)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('📩 Foreground Message: ${message.messageId}');
       debugPrint('📩 Title: ${message.notification?.title}');
       debugPrint('📩 Body: ${message.notification?.body}');
       debugPrint('📩 Data: ${message.data}');
 
-      _showLocalNotification(message);
+      if (platform_check.isAndroid) {
+        unawaited(
+          _showLocalNotification(message).catchError((Object e, StackTrace st) {
+            debugPrint('❌ Foreground local notification failed: $e');
+            debugPrint('$st');
+          }),
+        );
+      }
     });
 
     // 2. Message opened app (user tap notification)
@@ -243,45 +274,166 @@ class NotificationHelper {
       );
       debugPrint('📲 Data: ${initialMessage.data}');
 
-      _onMessageTapped?.call(initialMessage);
+      if (_onMessageTapped != null) {
+        _onMessageTapped!(initialMessage);
+      } else {
+        _pendingInitialOpenMessage = initialMessage;
+      }
     }
   }
 
   static Future<void> _showLocalNotification(RemoteMessage message) async {
+    final titleBody = _extractTitleAndBody(message);
+    if (titleBody == null) {
+      debugPrint(
+        '⚠️ Foreground message has no title/body — use notification payload '
+        'or data keys: title, body',
+      );
+      return;
+    }
+
+    _lastForegroundMessageForTap = message;
+
+    final imagePath = await _downloadNotificationImage(_extractImageUrl(message));
+
+    await _localNotifications.show(
+      message.messageId?.hashCode ??
+          DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      titleBody.$1,
+      titleBody.$2,
+      _buildNotificationDetails(
+        message: message,
+        title: titleBody.$1,
+        body: titleBody.$2,
+        imagePath: imagePath,
+      ),
+      payload: message.data.toString(),
+    );
+  }
+
+  /// คืน (title, body) จาก notification payload หรือ data
+  static (String, String)? _extractTitleAndBody(RemoteMessage message) {
+    final n = message.notification;
+    if (n?.title != null && n!.title!.isNotEmpty) {
+      return (n.title!, n.body ?? '');
+    }
+
+    final data = message.data;
+    final title = data['title'] ?? data['notification_title'];
+    final body = data['body'] ?? data['notification_body'] ?? data['message'];
+    if (title != null && title.isNotEmpty) {
+      return (title, body ?? '');
+    }
+    return null;
+  }
+
+  /// ดึง URL รูปจาก FCM (notification payload หรือ data)
+  static String? _extractImageUrl(RemoteMessage message) {
     final notification = message.notification;
+    final androidImage = notification?.android?.imageUrl;
+    if (androidImage != null && androidImage.isNotEmpty) return androidImage;
+
+    final appleImage = notification?.apple?.imageUrl;
+    if (appleImage != null && appleImage.isNotEmpty) return appleImage;
+
+    final data = message.data;
+    for (final key in ['image', 'imageUrl', 'image_url']) {
+      final value = data[key];
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  static Future<String?> _downloadNotificationImage(String? url) async {
+    if (url == null || url.isEmpty) return null;
+
+    try {
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.hasScheme) return null;
+
+      final dir = await getTemporaryDirectory();
+      final ext = uri.path.toLowerCase().endsWith('.png') ? '.png' : '.jpg';
+      final filePath =
+          '${dir.path}/fcm_img_${DateTime.now().millisecondsSinceEpoch}$ext';
+
+      await Dio().download(url, filePath);
+      return filePath;
+    } catch (e) {
+      debugPrint('❌ Failed to download notification image: $e');
+      return null;
+    }
+  }
+
+  static NotificationDetails _buildNotificationDetails({
+    required RemoteMessage message,
+    required String title,
+    required String body,
+    String? imagePath,
+  }) {
     final android = message.notification?.android;
 
-    if (notification != null) {
-      await _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _channelId,
-            _channelName,
-            channelDescription:
-                'This channel is used for Delta Compressor app notifications',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+    AndroidNotificationDetails androidDetails;
+    DarwinNotificationDetails iosDetails;
+
+    if (imagePath != null && platform_check.isAndroid) {
+      final bitmap = FilePathAndroidBitmap(imagePath);
+      androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription:
+            'This channel is used for Delta Compressor app notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+        styleInformation: BigPictureStyleInformation(
+          bitmap,
+          largeIcon: bitmap,
+          contentTitle: title,
+          summaryText: body,
         ),
-        payload: message.data.toString(),
+      );
+    } else {
+      androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription:
+            'This channel is used for Delta Compressor app notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: android?.smallIcon ?? '@mipmap/ic_launcher',
       );
     }
+
+    if (imagePath != null && platform_check.isIOS) {
+      iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        attachments: [DarwinNotificationAttachment(imagePath)],
+      );
+    } else {
+      iosDetails = const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+    }
+
+    return NotificationDetails(android: androidDetails, iOS: iosDetails);
   }
 
   /// ==================== Public API ====================
 
-  /// ตั้งค่า callback เมื่อ user tap notification
-  static void onNotificationTap(Function(RemoteMessage) callback) {
+  /// ตั้งค่า callback เมื่อ user เปิดจาก FCM (มี [RemoteMessage]) หรือแตะ local notification ตอน foreground ([message] เป็น null)
+  ///
+  /// เรียกหลัง GoRouter พร้อม — ถ้าเปิดแอปจาก terminated ด้วย notification จะส่งข้อความค้างเมื่อลงทะเบียนครั้งแรก
+  static void onNotificationTap(void Function(RemoteMessage? message) callback) {
     _onMessageTapped = callback;
+    final pending = _pendingInitialOpenMessage;
+    if (pending != null) {
+      _pendingInitialOpenMessage = null;
+      callback(pending);
+    }
   }
 
   /// ค่า platform สำหรับส่งไปยัง API device/token ('ios' | 'android' | 'web')
