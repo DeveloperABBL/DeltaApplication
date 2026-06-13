@@ -14,6 +14,9 @@ class HomeViewModel extends AppViewModel {
   UiResult<HomeData> _homeData = UiResult.loading();
   UiResult<HomeData> get homeData => _homeData;
 
+  List<ProductItem> _products = const [];
+  List<ProductItem> get products => _products;
+
   int _currentArticleIndex = 0;
   int get currentArticleIndex => _currentArticleIndex;
 
@@ -31,17 +34,21 @@ class HomeViewModel extends AppViewModel {
       if (preloaded != null) {
         if (preloaded.isSuccess) {
           _homeData = UiResult.success(data: preloaded.data);
+          _products = preloaded.data.products;
         } else if (preloaded.isEmpty) {
           _homeData = UiResult.empty(
               error: preloaded.hasError ? preloaded.error : null);
+          _products = const [];
         } else {
           _homeData = UiResult.error(error: preloaded.error);
+          _products = const [];
         }
         notifyListeners();
         return;
       }
 
       _homeData = UiResult.loading();
+      _products = const [];
       notifyListeners();
     }
 
@@ -52,24 +59,28 @@ class HomeViewModel extends AppViewModel {
 
       if (result.isSuccess) {
         _homeData = UiResult.success(data: result.data);
+        _products = result.data.products;
         notifyListeners();
         return;
       }
 
       if (result.isEmpty) {
         _homeData = UiResult.empty(error: result.hasError ? result.error : null);
+        _products = const [];
         notifyListeners();
         return;
       }
 
       if (result.hasError) {
         _homeData = UiResult.error(error: result.error);
+        _products = const [];
         notifyListeners();
         return;
       }
     } on Exception catch (e) {
       if (!isDisposed) {
         _homeData = UiResult.error(error: e);
+        _products = const [];
         notifyListeners();
       }
     }
@@ -86,14 +97,7 @@ class HomeViewModel extends AppViewModel {
       if (isDisposed) return;
 
       if (result.isSuccess) {
-        final current = _homeData.requireData;
-        _homeData = UiResult.success(
-          data: HomeData(
-            customer: current.customer,
-            articles: current.articles,
-            products: result.data,
-          ),
-        );
+        _products = result.data;
         notifyListeners();
       }
     } on Exception catch (_) {

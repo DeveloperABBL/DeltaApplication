@@ -161,7 +161,11 @@ class _HomeWidgetState extends State<HomeWidget> {
                           SliverToBoxAdapter(child: _buildProductHeader()),
                         ];
                       },
-                  body: _buildProductList(homeData.products),
+                  body: Selector<HomeViewModel, List<ProductItem>>(
+                    selector: (context, provider) => provider.products,
+                    builder: (context, products, child) =>
+                        _buildProductList(products),
+                  ),
                 ),
               );
             },
